@@ -396,6 +396,10 @@
       margin-bottom: 12px;
     }
 
+    .control.disabled {
+      opacity: .48;
+    }
+
     label {
       color: #ccd7ef;
       font-size: 12px;
@@ -417,6 +421,12 @@
       border-radius: 12px;
       outline: none;
       padding: 9px 10px;
+    }
+
+    input:disabled {
+      cursor: not-allowed;
+      opacity: .55;
+      background: rgba(255,255,255,.04);
     }
 
     input[type="range"] {
@@ -463,6 +473,40 @@
       font-size: 12px;
       padding: 6px 8px;
       border-radius: 10px;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 12px;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .icon-btn svg {
+      width: 21px;
+      height: 21px;
+      display: block;
+    }
+
+    .calendar-icon {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    .calendar-icon .calendar-day {
+      position: absolute;
+      top: 7px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 900;
+      color: currentColor;
     }
 
     .button-grid {
@@ -552,12 +596,12 @@
     .mobile-settings {
       display: inline-flex;
     }
-    }
 
     @media (max-width: 980px) {
       body { overflow: hidden; }
       .app {
         height: 100vh;
+        padding: 5px;
       }
       aside {
         top: 10px;
@@ -574,14 +618,60 @@
         background: rgba(0, 0, 0, .35);
       }
       main {
-        min-height: 100vh;
+        height: 100%;
+        min-height: 0;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: 5px;
       }
       .header {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: 7px 8px;
+        gap: 6px;
       }
-      .actions { justify-content: flex-start; }
+      h1 {
+        font-size: clamp(17px, 6vw, 23px);
+        line-height: 1.02;
+        letter-spacing: -.055em;
+      }
+      .actions {
+        justify-content: flex-end;
+        gap: 5px;
+        flex-wrap: nowrap;
+      }
+      .icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+      }
+      .icon-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+      .calendar-icon .calendar-day {
+        top: 6px;
+        font-size: 8px;
+      }
+      .chart-card {
+        min-height: 0;
+      }
       .status-bar {
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        gap: 6px;
+        padding: 6px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+      .metric {
+        flex: 0 0 150px;
+        padding: 7px 9px;
+        border-radius: 11px;
+      }
+      .metric .label {
+        font-size: 9px;
+        margin-bottom: 3px;
+      }
+      .metric .value {
+        font-size: 13px;
       }
       .tabs { grid-template-columns: repeat(2, 1fr); }
     }
@@ -714,12 +804,12 @@
         </div>
         <div class="toggles" style="margin-bottom:12px">
           <label class="toggle"><input id="showAthAtl" type="checkbox" checked><span>Show ATH/ATL timing overlay</span><button class="help" data-help="Turns the ATH/ATL path and points on or off. It is on by default.">?</button></label>
-          <label class="toggle"><input id="atlUsesPreviousAth" type="checkbox" checked><span>Next ATL equals ATH before previous</span><button class="help" data-help="When enabled, each new ATL is set to the ATH before the immediately previous ATH. Example: after ATH1 and ATH2, the following ATL equals ATH1. When disabled, ATL price is recalculated from the ATL band multiplier at that date.">?</button></label>
+          <label class="toggle"><input id="atlUsesPreviousAth" type="checkbox"><span>Next ATL equals ATH before previous</span><button class="help" data-help="When enabled, each new ATL is set to the ATH before the immediately previous ATH. Example: after ATH1 and ATH2, the following ATL equals ATH1. When disabled, ATL price is recalculated from the ATL band multiplier at that date.">?</button></label>
         </div>
         <div class="row-2">
           <div class="control">
-            <label class="label-row" for="cycleAnchorDate">Anchor ATL date <button class="help" data-help="The first ATL date used to start the repeating timing model. Default uses the Nov. 2022 BTC cycle low area.">?</button></label>
-            <input id="cycleAnchorDate" type="date" value="2022-11-21">
+            <label class="label-row" for="cycleAnchorDate">Anchor ATL date <button class="help" data-help="The first ATL date used to start the repeating timing model. Default is October 5, 2026.">?</button></label>
+            <input id="cycleAnchorDate" type="date" value="2026-10-05">
           </div>
           <div class="control">
             <label class="label-row" for="cycleLabelMode">Label detail <button class="help" data-help="Controls how much text is shown on the ATH/ATL points. Hover always shows details.">?</button></label>
@@ -741,13 +831,13 @@
           </div>
         </div>
         <div class="row-2">
-          <div class="control">
+          <div class="control" id="atlBandControl">
             <label class="label-row" for="atlBandMultiplier">ATL band multiplier <button class="help" data-help="Projected ATL price as a multiple of the base power-law line, unless the previous-ATH option overrides it.">?</button></label>
             <input id="atlBandMultiplier" type="number" value="0.42" min="0.01" step="0.01">
           </div>
           <div class="control">
             <label class="label-row" for="athBandMultiplier">ATH band multiplier <button class="help" data-help="Projected ATH price as a multiple of the base power-law line. Raise this for more aggressive bubble-cycle targets.">?</button></label>
-            <input id="athBandMultiplier" type="number" value="2.10" min="0.01" step="0.01">
+            <input id="athBandMultiplier" type="number" value="1.45" min="0.01" step="0.01">
           </div>
         </div>
       </div>
@@ -800,9 +890,15 @@
           <h1>Bitcoin Power Law Rainbow Chart</h1>
         </div>
         <div class="actions">
-          <button class="btn primary mobile-settings" id="mobileSettings">⚙ Settings</button>
-          <button class="btn" id="zoomOut">Zoom out</button>
-          <button class="btn primary" id="jumpToday">Jump to today</button>
+          <button class="btn primary mobile-settings icon-btn" id="mobileSettings" title="Settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6l-.03.04a2 2 0 0 1-3.94 0L10 20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1l-.04-.03a2 2 0 0 1 0-3.94L4 10a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6l.03-.04a2 2 0 0 1 3.94 0L14 4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.39.2.72.5.94.88l.04.07a2 2 0 0 1 0 3.9l-.04.07c-.22.38-.55.68-.94.88Z"/></svg>
+          </button>
+          <button class="btn icon-btn" id="zoomOut" title="Zoom out" aria-label="Zoom out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M16 16l5 5"/><path d="M7.5 10.5h6"/></svg>
+          </button>
+          <button class="btn primary icon-btn" id="jumpToday" title="Jump to today" aria-label="Jump to today">
+            <span class="calendar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9h18"/></svg><span class="calendar-day" id="calendarDay">18</span></span>
+          </button>
         </div>
       </section>
 
@@ -6510,6 +6606,8 @@
       csvInput: $("csvInput")
     };
 
+    $("calendarDay").textContent = String(today.getUTCDate());
+
     let bands = cloneBands(defaultBands);
     let metricSettings = metricDefinitions.map(m => ({ key: m.key, visible: m.defaultVisible, order: m.defaultOrder }));
     let imported = [];
@@ -6695,6 +6793,7 @@
 
     function recompute() {
       const s = getSettings();
+      updateAtlBandAvailability();
       $("yearsAheadLabel").textContent = s.yearsAhead;
       $("rangePill").textContent = `${s.yearsAhead}y`;
       state.endMs = addYears(today, s.yearsAhead).getTime();
@@ -6706,6 +6805,12 @@
       autoY();
       updateMetrics();
       draw();
+    }
+
+    function updateAtlBandAvailability() {
+      const disabled = controls.atlUsesPreviousAth.checked;
+      controls.atlBandMultiplier.disabled = disabled;
+      $("atlBandControl").classList.toggle("disabled", disabled);
     }
 
     function buildModelCache() {
@@ -6725,7 +6830,7 @@
     function buildCycleCache() {
       cycleCache = [];
       const s = getSettings();
-      const anchorDate = parseDate(s.cycleAnchorDate || "2022-11-21");
+      const anchorDate = parseDate(s.cycleAnchorDate || "2026-10-05");
       const upDays = Math.max(1, Number.isFinite(s.atlToAthDays) ? s.atlToAthDays : 1064);
       const downDays = Math.max(1, Number.isFinite(s.athToAtlDays) ? s.athToAtlDays : 364);
       if (!anchorDate) return;
@@ -6881,12 +6986,16 @@
       });
 
       const xTicks = getDateTicks();
+      let lastXLabel = -Infinity;
       xTicks.forEach(t => {
         const x = xToPx(t);
         if (x < plot.x || x > plot.x + plot.w) return;
-        line(x, plot.y, x, plot.y + plot.h);
         const label = dateLabel(new Date(t), (state.viewEndMs - state.viewStartMs) / DAY);
-        ctx.fillText(label, x - ctx.measureText(label).width / 2, plot.y + plot.h + 30);
+        const tw = ctx.measureText(label).width;
+        if (x - lastXLabel < Math.max(58, tw + 16)) return;
+        line(x, plot.y, x, plot.y + plot.h);
+        ctx.fillText(label, x - tw / 2, plot.y + plot.h + 30);
+        lastXLabel = x;
       });
 
       ctx.restore();
@@ -6960,7 +7069,7 @@
         ctx.save();
         ctx.translate(x + 4, plot.y + 48);
         ctx.rotate(-Math.PI / 2);
-        ctx.fillText(`Halving ${i}`, 0, 0);
+        ctx.fillText("Halving", 0, 0);
         ctx.restore();
       }
       ctx.restore();
@@ -6993,8 +7102,9 @@
     }
 
     function drawHistoricalLine() {
+      const s = getSettings();
       const points = imported
-        .filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs && p.price > 0)
+        .filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs && p.price > (s.linearScale ? 0 : PRICE_MIN))
         .sort((a, b) => a.t - b.t);
       if (points.length < 2) return;
       const step = Math.max(1, Math.floor(points.length / Math.max(450, plot.w)));
@@ -7033,7 +7143,7 @@
 
       ctx.save();
       ctx.lineWidth = 2.7;
-      ctx.strokeStyle = "rgba(255,255,255,.88)";
+      ctx.strokeStyle = "rgba(255,255,255,.58)";
       ctx.shadowColor = "rgba(255,255,255,.28)";
       ctx.shadowBlur = 12;
       ctx.beginPath();
@@ -7596,13 +7706,13 @@
         bands,
         metricSettings
       };
-      localStorage.setItem("btcPowerLawRainbowSettingsV2", JSON.stringify(payload));
+      localStorage.setItem("btcPowerLawRainbowSettingsV3", JSON.stringify(payload));
       flashButton($("saveSettings"), "Saved");
     }
 
     function loadSettings() {
       try {
-        const raw = localStorage.getItem("btcPowerLawRainbowSettingsV2");
+        const raw = localStorage.getItem("btcPowerLawRainbowSettingsV3");
         if (!raw) return;
         const data = JSON.parse(raw);
         if (data.controls) {
@@ -7733,7 +7843,7 @@
       if (v === 0) return "$0";
       if (v > 0 && v < 1) return "$" + v.toFixed(2);
       if (compact || v >= 1000000) {
-        return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: v >= 1000000 ? 2 : 0 }).format(v);
+        return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: compact ? 0 : 2 }).format(v);
       }
       return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }).format(v);
     }
