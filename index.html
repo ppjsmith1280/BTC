@@ -147,6 +147,43 @@
       gap: 8px;
     }
 
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      color: #ffffff;
+      font-size: clamp(20px, 2.25vw, 31px);
+      font-weight: 950;
+      letter-spacing: -.07em;
+      line-height: 1;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(255,255,255,.10);
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      color: #fff;
+      background: #f7931a;
+      box-shadow: 0 12px 30px rgba(247, 147, 26, .25), inset 0 0 0 2px rgba(255,255,255,.18);
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .brand-word-power {
+      color: #ffffff;
+      font-weight: 1000;
+      letter-spacing: -.035em;
+      transform: skewX(-8deg);
+      display: inline-block;
+      text-shadow: 2px 0 0 rgba(255,255,255,.24), 0 0 20px rgba(255,255,255,.10);
+    }
+
     .chart-card {
       position: relative;
       height: auto;
@@ -174,7 +211,7 @@
       max-width: min(360px, calc(100% - 24px));
       max-height: min(70vh, 520px);
       overflow: auto;
-      pointer-events: auto;
+      pointer-events: none;
       z-index: 5;
       display: none;
       padding: 12px 13px;
@@ -331,7 +368,7 @@
 
     .metric-config {
       display: grid;
-      grid-template-columns: auto 1fr 64px;
+      grid-template-columns: 28px auto 1fr;
       gap: 8px;
       align-items: center;
       padding: 8px 10px;
@@ -340,16 +377,45 @@
       background: rgba(255,255,255,.045);
     }
 
-    .metric-config span {
+    .metric-config.dragging {
+      opacity: .45;
+    }
+
+    .drag-handle {
+      width: 28px;
+      height: 28px;
+      display: inline-grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 9px;
+      background: rgba(255,255,255,.06);
+      color: #aebad2;
+      cursor: grab;
+      user-select: none;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .metric-config > span:not(.drag-handle) {
       min-width: 0;
       font-size: 12px;
       color: #d9e4fa;
     }
 
-    .metric-config input[type="number"] {
-      padding: 7px 6px;
-      border-radius: 10px;
+    .formula-display {
+      margin-top: 8px;
+      padding: 10px 11px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 12px;
+      background: rgba(255,255,255,.045);
+      color: #dbe7ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 12px;
+      line-height: 1.45;
     }
 
     .panel-section {
@@ -622,6 +688,14 @@
       color: #d6e0f5;
     }
 
+    .toggle.disabled {
+      opacity: .52;
+    }
+
+    .toggle.disabled input {
+      cursor: not-allowed;
+    }
+
     .band-list {
       display: grid;
       gap: 7px;
@@ -727,6 +801,14 @@
         gap: 5px;
         flex-wrap: nowrap;
       }
+      .brand {
+        font-size: clamp(18px, 5.6vw, 24px);
+      }
+      .brand-mark {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+      }
       .icon-btn {
         width: 38px;
         height: 38px;
@@ -750,6 +832,7 @@
         max-height: min(56dvh, 360px);
         padding: 10px;
         font-size: 12px;
+        pointer-events: auto;
       }
       .tooltip .row {
         gap: 10px;
@@ -807,7 +890,7 @@
       <div class="settings-head">
         <div class="settings-head-row">
           <div>
-            <h2>Chart settings <button class="help" data-help="Use these settings to change the active formula, display style, rainbow bands, ATH/ATL cycle overlay, imported data, and export options.">?</button></h2>
+            <h2>Chart settings</h2>
             <div class="small">Changes update the chart instantly. Save settings stores them in this browser.</div>
           </div>
           <button class="btn tiny" id="closeSettings">Close</button>
@@ -818,6 +901,7 @@
           <button class="tab" data-tab="bands">Bands <span class="help" data-help="Rainbow bands are multiplier zones around the base power-law line. They are not a separate formula; they help visualize overvaluation and undervaluation zones.">?</span></button>
           <button class="tab" data-tab="cycles">ATH/ATL <span class="help" data-help="The ATH/ATL overlay repeats the uploaded timing model: ATL to ATH is 1,064 days, then ATH to ATL is 364 days. Band multipliers set projected price levels.">?</span></button>
           <button class="tab" data-tab="metrics">Metrics <span class="help" data-help="Choose which summary boxes appear below the chart and set their left-to-right order.">?</span></button>
+          <button class="tab" data-tab="popup">Popup <span class="help" data-help="Choose which rows appear in the chart hover/tap popup and drag rows to reorder them.">?</span></button>
           <button class="tab" data-tab="data">Data <span class="help" data-help="Import your own BTC price points or export the chart, model data, settings, or full standalone app file.">?</span></button>
         </div>
       </div>
@@ -832,12 +916,13 @@
         <div class="control">
           <label class="label-row" for="preset">Formula preset <button class="help" data-help="Giovanni/Santostasi is the default: Price = 10^-17 × days^5.82. Other presets are included because different public power-law charts use slightly different regressions or constants.">?</button></label>
           <select id="preset">
-            <option value="giovanni" selected>Giovanni/Santostasi: 10^-17 × days^5.82</option>
-            <option value="fairprice">BitcoinFairPrice: 1.0117e-17 × days^5.82</option>
-            <option value="burger">Burger OLS 2019: 10^-17.01593313 × days^5.84509376</option>
-            <option value="bpl">BitcoinPower.Law: 10^-16.493 × days^5.68</option>
+            <option value="giovanni" selected>Giovanni/Santostasi</option>
+            <option value="fairprice">BitcoinFairPrice</option>
+            <option value="burger">Burger OLS 2019</option>
+            <option value="bpl">BitcoinPower.Law</option>
             <option value="custom">Custom</option>
           </select>
+          <div class="formula-display" id="formulaDisplay"></div>
         </div>
 
         <div class="row-2">
@@ -898,10 +983,15 @@
 
         <div class="toggles">
           <label class="toggle"><input id="showBase" type="checkbox" checked><span>Base power-law line</span><button class="help" data-help="The main formula line: price = A × days^n.">?</button></label>
-          <label class="toggle"><input id="showFair" type="checkbox" checked><span>Fair price line</span><button class="help" data-help="A multiplier of the base line used as a second fair-value guide.">?</button></label>
+          <label class="toggle" id="showFairToggle"><input id="showFair" type="checkbox" checked><span>Fair price line</span><button class="help" data-help="A multiplier of the base line used as a second fair-value guide. If the fair multiplier is 1.00, this line exactly equals the base line, so it is automatically hidden to avoid drawing the same line twice.">?</button></label>
           <label class="toggle"><input id="showBottom" type="checkbox" checked><span>Bottom price line</span><button class="help" data-help="A lower multiplier of the base line used as a support/floor guide.">?</button></label>
           <label class="toggle"><input id="showHalvings" type="checkbox" checked><span>Halving guide lines</span><button class="help" data-help="Approximate halving dates based on 210,000 blocks at roughly 10 minutes per block.">?</button></label>
           <label class="toggle"><input id="showCsv" type="checkbox" checked><span>Show historical price line</span><button class="help" data-help="Shows or hides the loaded historical BTC price data without clearing it from the CSV box.">?</button></label>
+        </div>
+
+        <div class="control" style="margin-top:12px">
+          <label class="label-row" for="rainbowOpacity">Rainbow transparency: <span><span id="rainbowOpacityLabel">28</span>%</span> <button class="help" data-help="Controls how transparent the colored rainbow bands are. Lower values make overlays and price action easier to see; higher values emphasize the bands.">?</button></label>
+          <input id="rainbowOpacity" type="range" min="5" max="60" step="1" value="28">
         </div>
       </div>
       </div>
@@ -976,6 +1066,16 @@
           <label class="toggle"><input id="collapseMetrics" type="checkbox"><span>Collapse metric tile area on desktop</span><button class="help" data-help="Hides the bottom metric strip on desktop to give the chart more vertical room. On mobile, metrics use the Metrics button below the chart.">?</button></label>
         </div>
         <div class="metric-list" id="metricList"></div>
+      </div>
+      </div>
+
+      <div class="tab-panel" data-panel="popup">
+      <div class="panel-section">
+        <div class="panel-title">
+          <h2>Popup rows <button class="help" data-help="Check the rows to include in the hover/tap popup. Drag the three-bar handle to change row order.">?</button></h2>
+        </div>
+        <p class="small">Popup order controls the rows under the date header. Band high/low groups expand into the active rainbow bands.</p>
+        <div class="metric-list" id="popupList"></div>
       </div>
       </div>
 
@@ -1071,7 +1171,7 @@
     <main>
       <section class="header">
         <div>
-          <h1>Bitcoin Power Law Rainbow Chart</h1>
+          <div class="brand" aria-label="Bitcoin Power Law"><span class="brand-mark">₿</span><span>Bitcoin <span class="brand-word-power">Power Law</span></span></div>
         </div>
         <div class="actions">
           <button class="btn mobile-settings icon-btn" id="mobileSettings" title="Settings" aria-label="Settings">
@@ -1083,8 +1183,12 @@
           <button class="btn icon-btn" id="jumpToday" title="Jump to today" aria-label="Jump to today">
             <span class="calendar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9h18"/></svg><span class="calendar-day" id="calendarDay">18</span></span>
           </button>
+          <button class="btn icon-btn" id="jumpDate" title="Jump to selected date" aria-label="Jump to selected date">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9h18"/><path d="M12 12.5v5M9.5 15h5"/></svg>
+          </button>
+          <input id="jumpDateInput" type="date" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px" aria-hidden="true">
           <button class="btn icon-btn" id="chartInfo" title="Chart info" aria-label="Chart info">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 0 1 4.6 1c0 1.8-2.4 2.1-2.4 4"/><path d="M12 17.2v.1"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.7 9.25a2.55 2.55 0 0 1 4.85 1.12c0 1.8-2.55 2.05-2.55 3.88"/><path d="M12 17.25h.01"/></svg>
           </button>
         </div>
       </section>
@@ -6731,10 +6835,10 @@
 2011-01-30,0`;
 
     const presets = {
-      giovanni: { A: "1e-17", n: 5.82, fair: 1.0, bottom: 0.42 },
-      fairprice: { A: "1.0117e-17", n: 5.82, fair: 0.71, bottom: 0.42 },
-      burger: { A: String(Math.pow(10, -17.01593313)), n: 5.84509376, fair: 1.0, bottom: 0.42 },
-      bpl: { A: String(Math.pow(10, -16.493)), n: 5.68, fair: 1.0, bottom: 0.42 }
+      giovanni: { label: "Giovanni/Santostasi", A: "1e-17", n: 5.82, fair: 1.0, bottom: 0.42 },
+      fairprice: { label: "BitcoinFairPrice", A: "1.0117e-17", n: 5.82, fair: 0.71, bottom: 0.42 },
+      burger: { label: "Burger OLS 2019", A: String(Math.pow(10, -17.01593313)), n: 5.84509376, fair: 1.0, bottom: 0.42 },
+      bpl: { label: "BitcoinPower.Law", A: String(Math.pow(10, -16.493)), n: 5.68, fair: 1.0, bottom: 0.42 }
     };
 
     const defaultBands = [
@@ -6761,6 +6865,19 @@
       { key: "scaleMode", label: "Scale mode", help: "Current price-axis mode: logarithmic or linear.", defaultVisible: false, defaultOrder: 10 }
     ];
 
+    const popupDefinitions = [
+      { key: "cursorPrice", label: "Cursor price", help: "Modeled price at the cursor's vertical position.", defaultVisible: true, defaultOrder: 1 },
+      { key: "band", label: "Current band", help: "Rainbow band containing the cursor price at the cursor date.", defaultVisible: true, defaultOrder: 2 },
+      { key: "base", label: "Base power law", help: "Base formula value at the cursor date.", defaultVisible: false, defaultOrder: 3 },
+      { key: "fair", label: "Fair value", help: "Fair-value guide at the cursor date. If fair multiplier is 1.00, this equals the base power law.", defaultVisible: true, defaultOrder: 4 },
+      { key: "bottom", label: "Bottom line", help: "Bottom/support guide at the cursor date.", defaultVisible: true, defaultOrder: 5 },
+      { key: "bandHighs", label: "Rainbow high prices", help: "Upper edge of each active band above the base line.", defaultVisible: true, defaultOrder: 6 },
+      { key: "bandLows", label: "Rainbow low prices", help: "Lower edge of each active band below the base line.", defaultVisible: true, defaultOrder: 7 },
+      { key: "nearestCycle", label: "Nearest ATH/ATL", help: "Nearest ATH or ATL point from the timing overlay.", defaultVisible: true, defaultOrder: 8 },
+      { key: "historical", label: "Nearest historical close", help: "Closest loaded BTC historical close to the cursor date.", defaultVisible: false, defaultOrder: 9 },
+      { key: "days", label: "Days since genesis", help: "Days between Bitcoin genesis and the cursor date.", defaultVisible: false, defaultOrder: 10 }
+    ];
+
     const $ = id => document.getElementById(id);
     const canvas = $("chart");
     const ctx = canvas.getContext("2d");
@@ -6768,6 +6885,7 @@
     const tooltip = $("tooltip");
     const bandList = $("bandList");
     const metricList = $("metricList");
+    const popupList = $("popupList");
     const metricsBar = $("metricsBar");
 
     const controls = {
@@ -6782,6 +6900,7 @@
       showBottom: $("showBottom"),
       showHalvings: $("showHalvings"),
       showCsv: $("showCsv"),
+      rainbowOpacity: $("rainbowOpacity"),
       priceScale: $("priceScale"),
       showAthAtl: $("showAthAtl"),
       atlUsesPreviousAth: $("atlUsesPreviousAth"),
@@ -6792,6 +6911,7 @@
       atlBandMultiplier: $("atlBandMultiplier"),
       athBandMultiplier: $("athBandMultiplier"),
       collapseMetrics: $("collapseMetrics"),
+      jumpDateInput: $("jumpDateInput"),
       csvInput: $("csvInput")
     };
 
@@ -6799,6 +6919,7 @@
 
     let bands = cloneBands(defaultBands);
     let metricSettings = metricDefinitions.map(m => ({ key: m.key, visible: m.defaultVisible, order: m.defaultOrder }));
+    let popupSettings = popupDefinitions.map(m => ({ key: m.key, visible: m.defaultVisible, order: m.defaultOrder }));
     let imported = [];
     let dpr = window.devicePixelRatio || 1;
     let padding = { left: 78, right: 28, top: 26, bottom: 58 };
@@ -6825,7 +6946,9 @@
     initializeHistoricalData();
     renderBandsEditor();
     renderMetricSettings();
+    renderPopupSettings();
     resize();
+    applyDefaultView();
     recompute();
 
     window.addEventListener("resize", () => { resize(); draw(); });
@@ -6845,9 +6968,23 @@
       $("rangePill").textContent = `${controls.yearsAhead.value}y`;
     });
 
+    $("rainbowOpacity").addEventListener("input", () => {
+      $("rainbowOpacityLabel").textContent = controls.rainbowOpacity.value;
+      draw();
+    });
+
     $("resetView").addEventListener("click", resetView);
     $("zoomOut").addEventListener("click", resetView);
     $("jumpToday").addEventListener("click", jumpToToday);
+    $("jumpDate").addEventListener("click", () => {
+      controls.jumpDateInput.value = isoDate(new Date(Math.min(Math.max(today.getTime(), state.startMs), state.endMs)));
+      if (typeof controls.jumpDateInput.showPicker === "function") controls.jumpDateInput.showPicker();
+      else controls.jumpDateInput.click();
+    });
+    controls.jumpDateInput.addEventListener("change", () => {
+      const d = parseDate(controls.jumpDateInput.value);
+      if (d) jumpToDate(d.getTime());
+    });
     $("metricToggle").addEventListener("click", () => {
       document.querySelector(".app").classList.toggle("metrics-open");
     });
@@ -7011,6 +7148,7 @@
         showBottom: controls.showBottom.checked,
         showHalvings: controls.showHalvings.checked,
         showCsv: controls.showCsv.checked,
+        rainbowOpacity: Number(controls.rainbowOpacity.value) / 100,
         priceScale: controls.priceScale.value,
         linearScale: controls.priceScale.value === "linear",
         showAthAtl: controls.showAthAtl.checked,
@@ -7029,8 +7167,11 @@
       const s = getSettings();
       updateAtlBandAvailability();
       updateMetricPanelMode();
+      updateFairLineAvailability();
+      updateFormulaDisplay();
       $("yearsAheadLabel").textContent = s.yearsAhead;
       $("rangePill").textContent = `${s.yearsAhead}y`;
+      $("rainbowOpacityLabel").textContent = controls.rainbowOpacity.value;
       state.endMs = addYears(today, s.yearsAhead).getTime();
       if (state.viewEndMs > state.endMs || state.viewEndMs <= state.viewStartMs) {
         state.viewEndMs = state.endMs;
@@ -7050,6 +7191,23 @@
 
     function updateMetricPanelMode() {
       document.querySelector(".app").classList.toggle("metrics-collapsed", controls.collapseMetrics.checked);
+    }
+
+    function isFairSameAsBase(s = getSettings()) {
+      return Math.abs(Number(s.fair) - 1) < 1e-9;
+    }
+
+    function updateFairLineAvailability() {
+      const same = isFairSameAsBase();
+      controls.showFair.disabled = same;
+      $("showFairToggle").classList.toggle("disabled", same);
+    }
+
+    function updateFormulaDisplay() {
+      const s = getSettings();
+      const preset = presets[controls.preset.value];
+      const name = preset ? preset.label : "Custom";
+      $("formulaDisplay").innerHTML = `${escapeHtml(name)}<br>price = ${formatCoefficient(s.A)} × days^${formatNumber(s.n, 6)}<br>fair multiplier = ${formatNumber(s.fair, 4)}, bottom multiplier = ${formatNumber(s.bottom, 4)}`;
     }
 
     function buildModelCache() {
@@ -7120,7 +7278,7 @@
       modelCache.forEach(p => {
         if (p.t < state.viewStartMs || p.t > state.viewEndMs) return;
         if (s.showBase) { min = Math.min(min, p.base); max = Math.max(max, p.base); }
-        if (s.showFair) { min = Math.min(min, p.base * s.fair); max = Math.max(max, p.base * s.fair); }
+        if (s.showFair && !isFairSameAsBase(s)) { min = Math.min(min, p.base * s.fair); max = Math.max(max, p.base * s.fair); }
         if (s.showBottom) { min = Math.min(min, p.base * s.bottom); max = Math.max(max, p.base * s.bottom); }
         visibleBands.forEach(b => {
           min = Math.min(min, p.base * b.lower);
@@ -7153,11 +7311,14 @@
 
       if (s.linearScale) {
         const pad = (max - min) * 0.12;
-        state.yMin = 0;
+        state.yMin = Math.max(0, min - pad);
         state.yMax = Math.min(PRICE_MAX, Math.max(PRICE_MIN * 10, max + pad));
       } else {
-        state.yMin = PRICE_MIN;
-        state.yMax = Math.min(PRICE_MAX, Math.max(PRICE_MIN * 10, Math.pow(10, Math.ceil(Math.log10(max)) + 0.05)));
+        const lo = Math.log10(Math.max(PRICE_MIN, min));
+        const hi = Math.log10(Math.max(PRICE_MIN * 1.1, max));
+        const span = Math.max(0.35, hi - lo);
+        state.yMin = Math.max(PRICE_MIN, Math.pow(10, lo - span * 0.14));
+        state.yMax = Math.min(PRICE_MAX, Math.pow(10, hi + span * 0.14));
       }
     }
 
@@ -7256,7 +7417,7 @@
         upper.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
         for (let i = lower.length - 1; i >= 0; i--) ctx.lineTo(lower[i][0], lower[i][1]);
         ctx.closePath();
-        ctx.fillStyle = hexToRgba(b.color, 0.28);
+        ctx.fillStyle = hexToRgba(b.color, getSettings().rainbowOpacity);
         ctx.fill();
         ctx.restore();
       });
@@ -7265,7 +7426,7 @@
     function drawLines() {
       const s = getSettings();
       if (s.showBase) drawModelLine(1, "#f5f7ff", 2.2, "base");
-      if (s.showFair) drawModelLine(s.fair, "#77e7a8", 2.0, "fair", [7, 7]);
+      if (s.showFair && !isFairSameAsBase(s)) drawModelLine(s.fair, "#77e7a8", 2.0, "fair", [7, 7]);
       if (s.showBottom) drawModelLine(s.bottom, "#7ab2ff", 2.0, "bottom", [3, 6]);
       drawTodayLine();
     }
@@ -7491,44 +7652,9 @@
       ctx.fill();
       ctx.restore();
 
-      const rows = [
-        { label: "Cursor price", value: formatMoney(yVal), color: "#ffffff" },
-        { label: "Band", value: band ? band.name : "Outside visible bands", color: band ? band.color : "#ffffff" }
-      ];
-      rows.push({ separator: true });
-      const visibleBands = bands.filter(b => b.visible);
-      let fairValueInserted = false;
-      visibleBands
-        .filter(b => b.upper > 1)
-        .sort((a, b) => b.upper - a.upper)
-        .forEach(b => {
-          rows.push({
-            label: `${b.name} high`,
-            value: formatMoney(base * b.upper),
-            color: b.color
-          });
-          if (!fairValueInserted && b.name.toLowerCase() === "fair value") {
-            rows.push({ label: "Fair value", value: formatMoney(base * s.fair), color: "#ffffff" });
-            fairValueInserted = true;
-          }
-        });
-      if (!fairValueInserted) {
-        rows.push({ label: "Fair value", value: formatMoney(base * s.fair), color: "#ffffff" });
-      }
-      rows.push({ label: "Bottom line", value: formatMoney(base * s.bottom), color: "#7ab2ff" });
-      visibleBands
-        .filter(b => b.lower < 1)
-        .sort((a, b) => b.lower - a.lower)
-        .forEach(b => rows.push({
-          label: `${b.name} low`,
-          value: formatMoney(base * b.lower),
-          color: b.color
-        }));
-      if (cyclePoint) {
-        rows.push({ label: "Nearest ATH/ATL", value: `${cyclePoint.type} ${formatMoney(cyclePoint.price)} (${formatDate(new Date(cyclePoint.t), true)})`, color: cyclePoint.type === "ATH" ? "#ffcf5a" : "#58d0ff" });
-      }
+      const rows = buildPopupRows({ t, d, base, yVal, band, cyclePoint, settings: s });
       const cardRect = chartCard.getBoundingClientRect();
-      tooltip.style.maxHeight = `${Math.max(160, cardRect.height - 24)}px`;
+      tooltip.style.maxHeight = `${Math.max(150, plot.h - 18)}px`;
       tooltip.innerHTML = `<button class="tooltip-close" type="button" aria-label="Close popup">×</button><div class="date">${formatDate(new Date(t))}</div>` +
         rows.map(row => row.separator
           ? `<div class="row separator"></div>`
@@ -7539,10 +7665,57 @@
       const tipW = tooltip.offsetWidth || 340;
       const tipH = tooltip.offsetHeight || 240;
       const left = Math.max(12, Math.min(cardRect.width - tipW - 12, hover.x + 16));
-      const top = Math.max(12, Math.min(cardRect.height - tipH - 12, hover.y + 16));
+      const bottomLimit = Math.max(12, plot.y + plot.h - tipH - 10);
+      const top = Math.max(12, Math.min(bottomLimit, hover.y + 16));
       tooltip.style.left = `${left}px`;
       tooltip.style.top = `${top}px`;
       tooltip.style.visibility = "visible";
+    }
+
+    function buildPopupRows(context) {
+      const { t, d, base, yVal, band, cyclePoint, settings: s } = context;
+      const visibleBands = bands.filter(b => b.visible);
+      const nearestHistorical = getNearestHistorical(t);
+      const rowMap = {
+        cursorPrice: [{ label: "Cursor price", value: formatMoney(yVal), color: "#ffffff" }],
+        band: [{ label: "Band", value: band ? band.name : "Outside visible bands", color: band ? band.color : "#ffffff" }, { separator: true }],
+        base: [{ label: "Base power law", value: formatMoney(base), color: "#ffffff" }],
+        fair: [{ label: isFairSameAsBase(s) ? "Fair value = base" : "Fair value", value: formatMoney(base * s.fair), color: "#ffffff" }],
+        bottom: [{ label: "Bottom line", value: formatMoney(base * s.bottom), color: "#7ab2ff" }],
+        bandHighs: visibleBands
+          .filter(b => b.upper > 1)
+          .sort((a, b) => b.upper - a.upper)
+          .map(b => ({ label: `${b.name} high`, value: formatMoney(base * b.upper), color: b.color })),
+        bandLows: visibleBands
+          .filter(b => b.lower < 1)
+          .sort((a, b) => b.lower - a.lower)
+          .map(b => ({ label: `${b.name} low`, value: formatMoney(base * b.lower), color: b.color })),
+        nearestCycle: cyclePoint ? [{ label: "Nearest ATH/ATL", value: `${cyclePoint.type} ${formatMoney(cyclePoint.price)} (${formatDate(new Date(cyclePoint.t), true)})`, color: cyclePoint.type === "ATH" ? "#ffcf5a" : "#58d0ff" }] : [],
+        historical: nearestHistorical ? [{ label: "Nearest historical close", value: `${formatMoney(nearestHistorical.price)} (${formatDate(new Date(nearestHistorical.t), true)})`, color: "#7bf4ff" }] : [],
+        days: [{ label: "Days since genesis", value: formatNumber(d, 0), color: "#ffffff" }]
+      };
+      const rows = [];
+      popupSettings
+        .map(setting => ({ ...popupDefinitions.find(def => def.key === setting.key), ...setting }))
+        .filter(item => item.key && item.visible)
+        .sort((a, b) => (Number(a.order) || 999) - (Number(b.order) || 999))
+        .forEach(item => rows.push(...(rowMap[item.key] || [])));
+      while (rows.length && rows[rows.length - 1].separator) rows.pop();
+      return rows;
+    }
+
+    function getNearestHistorical(t) {
+      if (!imported.length) return null;
+      let best = null;
+      let bestDist = Infinity;
+      imported.forEach(p => {
+        const dist = Math.abs(p.t - t);
+        if (dist < bestDist) {
+          best = p;
+          bestDist = dist;
+        }
+      });
+      return best;
     }
 
     function hideTooltip() {
@@ -7836,6 +8009,22 @@
     }
 
     function resetView() {
+      applyDefaultView();
+      autoY();
+      clampYRange();
+      updateMetrics();
+      draw();
+    }
+
+    function applyDefaultView() {
+      const years = 25;
+      const end = Math.min(state.endMs, today.getTime() + years * 365.25 * DAY);
+      const start = Math.max(state.startMs, today.getTime() - Math.max(90, years * 80) * DAY);
+      state.viewStartMs = start;
+      state.viewEndMs = end;
+    }
+
+    function resetAllView() {
       state.viewStartMs = state.startMs;
       state.viewEndMs = state.endMs;
       autoY();
@@ -7845,16 +8034,24 @@
     }
 
     function jumpToToday() {
+      jumpToDate(today.getTime());
+    }
+
+    function jumpToDate(targetT) {
+      const clampedT = Math.min(state.endMs, Math.max(state.startMs, targetT));
       const span = Math.min(state.endMs - state.startMs, 365 * 6 * DAY);
-      state.viewStartMs = Math.max(state.startMs, today.getTime() - span * .45);
+      state.viewStartMs = Math.max(state.startMs, clampedT - span * .45);
       state.viewEndMs = Math.min(state.endMs, state.viewStartMs + span);
+      if (state.viewEndMs - state.viewStartMs < span) {
+        state.viewStartMs = Math.max(state.startMs, state.viewEndMs - span);
+      }
       autoY();
       updateMetrics();
       draw();
     }
 
     function setWindow(w) {
-      if (w === "all") return resetView();
+      if (w === "all") return resetAllView();
       const years = Number(w);
       const end = Math.min(state.endMs, today.getTime() + years * 365.25 * DAY);
       const start = Math.max(state.startMs, today.getTime() - Math.max(90, years * 80) * DAY);
@@ -7891,29 +8088,72 @@
         return { ...def, visible: saved ? saved.visible : def.defaultVisible, order: saved ? saved.order : def.defaultOrder };
       });
       metricSettings = merged.map(m => ({ key: m.key, visible: m.visible, order: Number(m.order) || m.defaultOrder }));
-      merged.sort((a, b) => a.order - b.order).forEach(metric => {
-        const row = document.createElement("label");
-        row.className = "metric-config";
-        row.innerHTML = `
-          <input type="checkbox" ${metric.visible ? "checked" : ""}>
-          <span>${metric.label} <button type="button" class="help" data-help="${escapeHtml(metric.help)}">?</button></span>
-          <input type="number" min="1" step="1" value="${metric.order}" title="Order">
-        `;
-        const checkbox = row.children[0];
-        const order = row.children[2];
-        checkbox.addEventListener("change", () => {
-          const item = metricSettings.find(m => m.key === metric.key);
-          if (item) item.visible = checkbox.checked;
-          updateMetrics();
-        });
-        order.addEventListener("input", () => {
-          const item = metricSettings.find(m => m.key === metric.key);
-          if (item) item.order = Number(order.value) || metric.defaultOrder;
-          updateMetrics();
-        });
-        metricList.appendChild(row);
-      });
+      renderSortableSettings(metricList, merged, metricSettings, metricDefinitions, () => updateMetrics());
       bindHelpButtons(metricList);
+    }
+
+    function renderPopupSettings() {
+      popupList.innerHTML = "";
+      const merged = popupDefinitions.map(def => {
+        const saved = popupSettings.find(m => m.key === def.key);
+        return { ...def, visible: saved ? saved.visible : def.defaultVisible, order: saved ? saved.order : def.defaultOrder };
+      });
+      popupSettings = merged.map(m => ({ key: m.key, visible: m.visible, order: Number(m.order) || m.defaultOrder }));
+      renderSortableSettings(popupList, merged, popupSettings, popupDefinitions, () => draw());
+      bindHelpButtons(popupList);
+    }
+
+    function renderSortableSettings(container, rows, settingsArray, definitions, onChange) {
+      rows.sort((a, b) => a.order - b.order).forEach(item => {
+        const row = document.createElement("div");
+        row.className = "metric-config";
+        row.draggable = true;
+        row.dataset.key = item.key;
+        row.innerHTML = `
+          <span class="drag-handle" title="Drag to reorder">☰</span>
+          <input type="checkbox" ${item.visible ? "checked" : ""} aria-label="Show ${escapeHtml(item.label)}">
+          <span>${escapeHtml(item.label)} <button type="button" class="help" data-help="${escapeHtml(item.help)}">?</button></span>
+        `;
+        const checkbox = row.children[1];
+        checkbox.addEventListener("change", () => {
+          const setting = settingsArray.find(m => m.key === item.key);
+          if (setting) setting.visible = checkbox.checked;
+          onChange();
+        });
+        row.addEventListener("dragstart", e => {
+          row.classList.add("dragging");
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", item.key);
+        });
+        row.addEventListener("dragend", () => row.classList.remove("dragging"));
+        row.addEventListener("dragover", e => {
+          e.preventDefault();
+          const dragging = container.querySelector(".dragging");
+          if (!dragging || dragging === row) return;
+          const rect = row.getBoundingClientRect();
+          const before = e.clientY < rect.top + rect.height / 2;
+          container.insertBefore(dragging, before ? row : row.nextSibling);
+        });
+        row.addEventListener("drop", e => {
+          e.preventDefault();
+          syncSortableOrder(container, settingsArray, definitions);
+          onChange();
+        });
+        container.appendChild(row);
+      });
+    }
+
+    function syncSortableOrder(container, settingsArray, definitions) {
+      [...container.querySelectorAll(".metric-config")].forEach((row, index) => {
+        const key = row.dataset.key;
+        let setting = settingsArray.find(m => m.key === key);
+        const def = definitions.find(d => d.key === key);
+        if (!setting && def) {
+          setting = { key, visible: def.defaultVisible, order: index + 1 };
+          settingsArray.push(setting);
+        }
+        if (setting) setting.order = index + 1;
+      });
     }
 
     function initializeHistoricalData() {
@@ -8011,6 +8251,7 @@
           showBottom: controls.showBottom.checked,
           showHalvings: controls.showHalvings.checked,
           showCsv: controls.showCsv.checked,
+          rainbowOpacity: controls.rainbowOpacity.value,
           priceScale: controls.priceScale.value,
           showAthAtl: controls.showAthAtl.checked,
           atlUsesPreviousAth: controls.atlUsesPreviousAth.checked,
@@ -8023,15 +8264,16 @@
           collapseMetrics: controls.collapseMetrics.checked
         },
         bands,
-        metricSettings
+        metricSettings,
+        popupSettings
       };
-      localStorage.setItem("btcPowerLawRainbowSettingsV3", JSON.stringify(payload));
+      localStorage.setItem("btcPowerLawRainbowSettingsV4", JSON.stringify(payload));
       flashButton($("saveSettings"), "Saved");
     }
 
     function loadSettings() {
       try {
-        const raw = localStorage.getItem("btcPowerLawRainbowSettingsV3");
+        const raw = localStorage.getItem("btcPowerLawRainbowSettingsV4");
         if (!raw) return;
         const data = JSON.parse(raw);
         if (data.controls) {
@@ -8043,6 +8285,7 @@
         }
         if (Array.isArray(data.bands) && data.bands.length) bands = data.bands;
         if (Array.isArray(data.metricSettings) && data.metricSettings.length) metricSettings = data.metricSettings;
+        if (Array.isArray(data.popupSettings) && data.popupSettings.length) popupSettings = data.popupSettings;
       } catch {}
     }
 
@@ -8165,6 +8408,19 @@
         return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: compact ? 0 : 2 }).format(v);
       }
       return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }).format(v);
+    }
+
+    function formatNumber(v, decimals = 2) {
+      if (!Number.isFinite(Number(v))) return "-";
+      return Number(v).toLocaleString(undefined, {
+        maximumFractionDigits: decimals,
+        minimumFractionDigits: 0
+      });
+    }
+
+    function formatCoefficient(v) {
+      if (!Number.isFinite(Number(v))) return String(v || "-");
+      return Number(v).toExponential(6).replace(/\.?0+e/, "e");
     }
 
     function niceStep(raw) {
