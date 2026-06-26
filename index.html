@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bitcoin Power Law MSTR Dashboard v23</title>
+  <title>Bitcoin Power Law MSTR Dashboard v27</title>
   <style>
     :root {
       --bg: #070a12;
@@ -19,6 +19,8 @@
       --yellow: #ffcf5a;
       --shadow: 0 18px 55px rgba(0,0,0,.45);
       --radius: 18px;
+      --drawer-width: min(426px, calc(100vw - 24px));
+      --popup-window-width: min(340px, calc(100vw - 24px));
       color-scheme: dark;
     }
     * { box-sizing: border-box; }
@@ -49,12 +51,13 @@
       grid-template-rows: auto 1fr auto;
       gap: 10px;
     }
-    .chart-card, .status-bar { transition: margin-right .22s ease; }
+    .chart-card { transition: margin-right .22s ease; }
     .app.settings-open .chart-card,
-    .app.settings-open .status-bar,
-    .app.info-open .chart-card,
-    .app.info-open .status-bar {
-      margin-right: calc(min(426px, calc(100vw - 24px)) + 10px);
+    .app.info-open .chart-card {
+      margin-right: calc(var(--drawer-width) + 10px);
+    }
+    .app.popup-window-open:not(.settings-open):not(.info-open) .chart-card {
+      margin-right: calc(var(--popup-window-width) + 10px);
     }
     .header, .status-bar, .chart-card {
       background: rgba(9,13,23,.74);
@@ -64,6 +67,9 @@
       backdrop-filter: blur(18px);
     }
     .header {
+      position: relative;
+      z-index: 120;
+      overflow: visible;
       padding: 9px 13px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -315,9 +321,9 @@
       position: fixed;
       top: var(--drawer-top, 74px);
       right: 8px;
-      bottom: 8px;
+      bottom: var(--drawer-bottom, 8px);
       z-index: 30;
-      width: min(426px, calc(100vw - 24px));
+      width: var(--drawer-width);
       min-height: 0;
       overflow: auto;
       background: var(--panel);
@@ -329,6 +335,67 @@
       transition: transform .22s ease;
     }
     aside.open { transform: translateX(0); }
+    #popupWindow { width: var(--popup-window-width); z-index: 28; }
+    .app.settings-open #popupWindow,
+    .app.info-open #popupWindow,
+    .app:not(.popup-window-open) #popupWindow { transform: translateX(calc(100% + 28px)); }
+    .popup-window-head {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 14px 16px 10px;
+      background: #0d1320;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .popup-window-body { padding: 12px 14px 16px; font-size: 13px; }
+    .popup-window-body .date { font-weight: 850; margin-bottom: 8px; text-align: right; color: #f3f7ff; }
+    .popup-window-body .row { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; color: var(--muted); }
+    .popup-window-body .row strong { color: inherit; font-weight: 750; white-space: nowrap; }
+    .popup-window-body .row.separator { margin-top: 6px; padding-top: 7px; border-top: 1px solid rgba(255,255,255,.18); }
+    .popup-mode-wrap { position: relative; display: inline-grid; }
+    .popup-mode-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 9999;
+      display: none;
+      min-width: 176px;
+      padding: 6px;
+      border-radius: 13px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(13,18,31,.98);
+      box-shadow: 0 18px 45px rgba(0,0,0,.45);
+      backdrop-filter: blur(16px);
+    }
+    .popup-mode-menu.open { display: grid; gap: 4px; }
+    .popup-mode-option {
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #dbe6ff;
+      text-align: left;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .popup-mode-option:hover,
+    .popup-mode-option.active { background: rgba(255,255,255,.10); }
+    .icon-btn.popup-follow { border-color: rgba(125,247,255,.55); box-shadow: 0 0 0 1px rgba(125,247,255,.18), 0 0 18px rgba(125,247,255,.16); }
+    .icon-btn.popup-anchor { border-color: rgba(255,207,90,.70); box-shadow: 0 0 0 1px rgba(255,207,90,.20), 0 0 18px rgba(255,207,90,.17); }
+    .portfolio-chart-refresh {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      z-index: 6;
+      display: none;
+      border-color: rgba(255,124,124,.48);
+      background: rgba(255,92,92,.14);
+    }
+    .app.portfolio-dirty .portfolio-chart-refresh { display: inline-flex; }
+    .portfolio-refresh.disabled { opacity: .42; pointer-events: none; }
+    .portfolio-field-dirty { color: #ff7b7b !important; border-color: rgba(255,103,103,.55) !important; box-shadow: 0 0 0 1px rgba(255,103,103,.15); }
+    .portfolio-title-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .backdrop {
       position: fixed;
       inset: 0;
@@ -695,9 +762,8 @@
       .app { height: 100dvh; padding: 5px 5px max(5px, env(safe-area-inset-bottom)); }
       main { grid-template-rows: auto minmax(0, 1fr) auto; gap: 5px; }
       .app.settings-open .chart-card,
-      .app.settings-open .status-bar,
       .app.info-open .chart-card,
-      .app.info-open .status-bar { margin-right: 0; }
+      .app.popup-window-open .chart-card { margin-right: 0; }
       .backdrop.open { display: block; }
       aside { top: 10px; right: 10px; bottom: 10px; width: min(390px, calc(100vw - 20px)); }
       .header { padding: 7px 8px; gap: 6px; }
@@ -779,9 +845,16 @@
           <button class="btn icon-btn" id="toggleInflation" title="Inflation-adjust chart" aria-label="Inflation-adjust chart">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18V7"/><path d="M4 18h16"/><path d="M7 15l4-4 3 3 5-7"/><path d="M16 7h3v3"/><path d="M9.5 6.8c.5-.6 1.4-1 2.5-1 1.5 0 2.6.7 2.6 1.8 0 1.2-1.1 1.7-2.8 2.1-1.8.4-2.8.9-2.8 2.1 0 1.2 1.1 2 2.9 2 1.1 0 2-.3 2.7-1"/></svg>
           </button>
-          <button class="btn icon-btn" id="toggleTooltipAnchor" title="Anchor popup to corner" aria-label="Anchor popup to corner">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>
-          </button>
+          <div class="popup-mode-wrap">
+            <button class="btn icon-btn" id="toggleTooltipAnchor" title="Popup mode" aria-label="Popup mode">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>
+            </button>
+            <div class="popup-mode-menu" id="popupModeMenu" role="menu" aria-label="Popup mode menu">
+              <button class="popup-mode-option" data-popup-mode="follow" type="button">Popup Follow</button>
+              <button class="popup-mode-option" data-popup-mode="anchor" type="button">Popup Anchor</button>
+              <button class="popup-mode-option" data-popup-mode="window" type="button">Popup Window</button>
+            </div>
+          </div>
           <button class="btn icon-btn" id="openInfo" title="Chart info" aria-label="Chart info">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M9.75 9a2.35 2.35 0 0 1 4.55.8c0 1.9-2.3 2.05-2.3 4"/><path d="M12 17.4h.01"/></svg>
           </button>
@@ -791,12 +864,20 @@
 
       <section class="chart-card" id="chartCard">
         <canvas id="chart"></canvas>
+        <button class="btn tiny portfolio-chart-refresh" id="portfolioChartRefresh" type="button">Refresh portfolio</button>
         <div class="tooltip" id="tooltip"></div>
       </section>
 
       <button class="btn metric-toggle" id="metricToggle">Metrics</button>
       <section class="status-bar" id="metricsBar"></section>
     </main>
+
+    <aside id="popupWindow" class="popup-window open" aria-label="Chart data window">
+      <div class="popup-window-head">
+        <h2>Chart Data</h2>
+      </div>
+      <div class="popup-window-body" id="popupWindowBody"></div>
+    </aside>
 
     <aside id="settingsPanel">
       <div class="settings-head">
@@ -1047,8 +1128,8 @@
       </div>
 
       <div class="panel" data-panel-content="portfolio">
-        <div class="panel-section">
-          <div class="panel-title"><h2>Portfolio assumptions</h2></div>
+        <div class="panel-section" id="portfolioSettingsSection">
+          <div class="panel-title portfolio-title-row"><h2>Portfolio assumptions</h2><button class="btn tiny portfolio-refresh disabled" id="portfolioSettingsRefresh" type="button">Refresh</button></div>
           <p class="small">Portfolio value = BTC holdings × BTC price + MSTR shares × MSTR price. DCA amounts are in dollars and buy more BTC or MSTR shares at the projected price on each purchase date.</p>
           <div class="row-2">
             <div class="control"><label for="portfolioBtcHoldings">Current BTC holdings</label><input id="portfolioBtcHoldings" type="text" value="1.00" inputmode="decimal"></div>
@@ -1218,7 +1299,7 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV23";
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV27";
     const PRELOADED_CSV = String.raw`2026-06-25,59721.68
 2026-06-24,60995.13
 2026-06-23,62668.02
@@ -6847,7 +6928,8 @@
 2011-01-30,0
 `;
 
-    const PRELOADED_MSTR_CSV = String.raw`2026-06-24,94.69
+    const PRELOADED_MSTR_CSV = String.raw`2026-06-25,83.23
+2026-06-24,94.69
 2026-06-23,102.48
 2026-06-22,106.54
 2026-06-21,116.21
@@ -7286,7 +7368,7 @@
         { key: "cycleOverlayValue", visible: true },
         { key: "band", visible: false },
         { key: "separatorTop", visible: true, uid: "btc-divider-bands" },
-        { key: "bandPrices", visible: true, options: { expanded: true } },
+        { key: "bandPrices", visible: true, options: { expanded: true, shortenLabels: true } },
         { key: "separatorTop", visible: true, uid: "btc-divider-cycle" },
         { key: "nearestCycle", visible: true },
         { key: "btcBase", visible: false },
@@ -7300,7 +7382,7 @@
         { key: "cursorPrice", visible: true },
         { key: "mstrRainbowBand", visible: true },
         { key: "separatorTop", visible: true, uid: "mstr-divider-bands" },
-        { key: "mstrRainbowPrices", visible: true },
+        { key: "mstrRainbowPrices", visible: true, options: { shortenLabels: true } },
         { key: "mstrFairValue", visible: true },
         { key: "mstrRainbowMode", visible: false },
         { key: "separatorTop", visible: true, uid: "mstr-divider-events" },
@@ -7423,6 +7505,9 @@
     let tooltipAnchorMode = false;
     let tooltipCorner = "bottomRight";
     let tooltipDrag = null;
+    let popupMode = "window";
+    let appliedPortfolioSettings = null;
+    let portfolioDirty = false;
     let deferredChartLabels = [];
     const activePointers = new Map();
     let pinchGesture = null;
@@ -7451,6 +7536,9 @@
     renderMetricsEditor();
     renderPopupEditor();
     resize();
+    appliedPortfolioSettings = getPortfolioSettings();
+    setPopupMode(popupMode, false);
+    updatePortfolioDirtyState(false);
     recompute();
     applyDefaultView();
 
@@ -7459,13 +7547,22 @@
     Object.entries(controls).forEach(([key, el]) => {
       if (!el || key === "csvInput" || key === "mstrCsvInput") return;
       el.addEventListener("input", () => {
+        if (key.startsWith("portfolio")) {
+          formatCommaInputs();
+          markPortfolioDirty();
+          return;
+        }
         if (key === "preset") applyPreset(el.value);
         else if (["constantA","exponentN","fairMultiplier","bottomMultiplier"].includes(key)) controls.preset.value = "custom";
         if (key === "mstrRainbowMode") renderPopupEditor();
         if (key === "cycleProjectionMode") updateCycleProjectionSettingsVisibility();
         recompute();
       });
-      el.addEventListener("change", () => { formatCommaInputs(); recompute(); });
+      el.addEventListener("change", () => {
+        formatCommaInputs();
+        if (key.startsWith("portfolio")) { markPortfolioDirty(); return; }
+        recompute();
+      });
     });
 
     document.querySelectorAll(".mode-tab").forEach(btn => {
@@ -7482,7 +7579,7 @@
 
     $("openSettings").addEventListener("click", () => $("settingsPanel").classList.contains("open") ? closeDrawers() : openDrawer("settings"));
     $("closeSettings").addEventListener("click", closeDrawers);
-    $("openInfo").addEventListener("click", () => openDrawer("info"));
+    $("openInfo").addEventListener("click", () => $("infoPanel").classList.contains("open") ? closeDrawers() : openDrawer("info"));
     $("closeInfo").addEventListener("click", closeDrawers);
     $("backdrop").addEventListener("click", closeDrawers);
     $("zoomOut").addEventListener("click", applyDefaultView);
@@ -7491,7 +7588,8 @@
     $("jumpDateBtn").addEventListener("click", () => $("jumpDateInput").showPicker ? $("jumpDateInput").showPicker() : $("jumpDateInput").click());
     $("jumpDateInput").addEventListener("change", () => jumpToDate(parseDate($("jumpDateInput").value)));
     $("toggleInflation")?.addEventListener("click", () => { controls.inflationAdjusted.checked = !controls.inflationAdjusted.checked; recompute(); });
-    $("toggleTooltipAnchor")?.addEventListener("click", toggleTooltipAnchorMode);
+    $("toggleTooltipAnchor")?.addEventListener("click", togglePopupModeMenu);
+    document.querySelectorAll("[data-popup-mode]").forEach(btn => btn.addEventListener("click", () => setPopupMode(btn.dataset.popupMode)));
     tooltip.addEventListener("pointerdown", onTooltipPointerDown);
     document.addEventListener("pointermove", onTooltipPointerMove);
     document.addEventListener("pointerup", onTooltipPointerUp);
@@ -7499,6 +7597,8 @@
     $("addDividerBtc")?.addEventListener("click", () => addPopupDivider("btc"));
     $("addDividerMstr")?.addEventListener("click", () => addPopupDivider("mstr"));
     $("addDividerPortfolio")?.addEventListener("click", () => addPopupDivider("portfolio"));
+    $("portfolioChartRefresh")?.addEventListener("click", applyPortfolioSettings);
+    $("portfolioSettingsRefresh")?.addEventListener("click", applyPortfolioSettings);
     $("resetBands").addEventListener("click", () => { bands = cloneBands(defaultBands); renderBandsEditor(); recompute(); });
     $("resetMstrBands")?.addEventListener("click", () => { mstrBands = cloneBands(defaultMstrBands); renderMstrBandsEditor(); recompute(); });
     $("toggleAllBands").addEventListener("click", () => {
@@ -7525,7 +7625,7 @@
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointercancel", onPointerUp);
     canvas.addEventListener("pointerleave", () => {
-      if (window.matchMedia("(pointer: fine)").matches && !pinnedHover && !tooltipAnchorMode) {
+      if (window.matchMedia("(pointer: fine)").matches && !pinnedHover && popupMode === "follow") {
         hover = null;
         pinnedHover = false;
         pinnedHoverData = null;
@@ -7538,6 +7638,7 @@
 
     document.addEventListener("click", e => {
       if (!e.target.closest(".help")) hideHelp();
+      if (!e.target.closest(".popup-mode-wrap")) $("popupModeMenu")?.classList.remove("open");
     });
     injectSettingHelp();
     bindHelpButtons(document);
@@ -7679,6 +7780,7 @@
       tooltip.style.display = "none";
       if (mode === "portfolio" && state.viewEndMs < today.getTime()) setWindow("25", false);
       autoY();
+      updatePortfolioDirtyState();
       if (pinnedHoverData) {
         pinnedHover = true;
         hover = hoverFromPinnedData();
@@ -7689,6 +7791,31 @@
       }
       updateMetrics();
       draw();
+    }
+
+    function togglePopupModeMenu(e) {
+      e?.stopPropagation?.();
+      const menu = $("popupModeMenu");
+      if (menu) menu.classList.toggle("open");
+    }
+
+    function setPopupMode(mode = "window", redraw = true) {
+      popupMode = ["follow", "anchor", "window"].includes(mode) ? mode : "window";
+      tooltipAnchorMode = popupMode === "anchor";
+      if (tooltipAnchorMode && !tooltipCorner) tooltipCorner = "bottomRight";
+      app.classList.toggle("popup-window-open", popupMode === "window");
+      const btn = $("toggleTooltipAnchor");
+      if (btn) {
+        btn.classList.remove("active", "popup-follow", "popup-anchor");
+        if (popupMode === "follow") btn.classList.add("popup-follow");
+        if (popupMode === "anchor") btn.classList.add("active", "popup-anchor");
+        btn.title = popupMode === "follow" ? "Popup follows pointer" : popupMode === "anchor" ? "Popup anchored to corner" : "Popup window";
+      }
+      document.querySelectorAll("[data-popup-mode]").forEach(b => b.classList.toggle("active", b.dataset.popupMode === popupMode));
+      $("popupModeMenu")?.classList.remove("open");
+      if (popupMode === "window") ensurePopupWindowHover(true);
+      saveSettings();
+      if (redraw) { resize(); autoY(); updateMetrics(); draw(); }
     }
 
     function isMobilePopupMode() {
@@ -7747,6 +7874,11 @@
       if (!pinnedHover) pinnedHover = true;
     }
 
+    function ensurePopupWindowHover(force = false) {
+      if (popupMode !== "window" || isMobilePopupMode()) return;
+      if (force || !hover) hover = defaultHoverPoint();
+    }
+
     function hoverFromPinnedData() {
       if (!pinnedHoverData) return null;
       const x = xToPx(pinnedHoverData.t);
@@ -7759,11 +7891,14 @@
 
     function updateDrawerPosition() {
       const header = document.querySelector(".header");
-      if (!header) return;
+      const card = chartCard;
+      if (!header || !card) return;
       const appRect = app.getBoundingClientRect();
-      const headerRect = header.getBoundingClientRect();
-      const top = Math.max(10, Math.round(headerRect.bottom - appRect.top + 10));
+      const cardRect = card.getBoundingClientRect();
+      const top = Math.max(10, Math.round(cardRect.top - appRect.top));
+      const bottom = Math.max(8, Math.round(window.innerHeight - cardRect.bottom));
       app.style.setProperty("--drawer-top", `${top}px`);
+      app.style.setProperty("--drawer-bottom", `${bottom}px`);
     }
 
     function openDrawer(which) {
@@ -7785,7 +7920,8 @@
       $("infoPanel").classList.remove("open");
       $("backdrop").classList.remove("open");
       app.classList.remove("settings-open", "info-open");
-      if (redraw) setTimeout(() => { resize(); draw(); }, 240);
+      if (popupMode === "window") app.classList.add("popup-window-open");
+      if (redraw) setTimeout(() => { resize(); ensurePopupWindowHover(true); draw(); }, 240);
     }
 
     function setSettingsPanel(name) {
@@ -7903,6 +8039,76 @@
       };
     }
 
+    function normalizePortfolioSettings(settings) {
+      const s = settings || getPortfolioSettings();
+      return {
+        btcHoldings: Number(s.btcHoldings) || 0,
+        mstrShares: Number(s.mstrShares) || 0,
+        btcDcaAmount: Number(s.btcDcaAmount) || 0,
+        btcDcaFrequency: s.btcDcaFrequency || "none",
+        btcDcaStart: s.btcDcaStart || isoDate(today),
+        mstrDcaAmount: Number(s.mstrDcaAmount) || 0,
+        mstrDcaFrequency: s.mstrDcaFrequency || "none",
+        mstrDcaStart: s.mstrDcaStart || isoDate(today)
+      };
+    }
+
+    function portfolioSettingsEqual(a, b) {
+      return JSON.stringify(normalizePortfolioSettings(a)) === JSON.stringify(normalizePortfolioSettings(b));
+    }
+
+    function getAppliedPortfolioSettings() {
+      if (!appliedPortfolioSettings) appliedPortfolioSettings = normalizePortfolioSettings(getPortfolioSettings());
+      return normalizePortfolioSettings(appliedPortfolioSettings);
+    }
+
+    function portfolioControlMap() {
+      return {
+        btcHoldings: controls.portfolioBtcHoldings,
+        mstrShares: controls.portfolioMstrShares,
+        btcDcaAmount: controls.portfolioBtcDcaAmount,
+        btcDcaFrequency: controls.portfolioBtcDcaFrequency,
+        btcDcaStart: controls.portfolioBtcDcaStart,
+        mstrDcaAmount: controls.portfolioMstrDcaAmount,
+        mstrDcaFrequency: controls.portfolioMstrDcaFrequency,
+        mstrDcaStart: controls.portfolioMstrDcaStart
+      };
+    }
+
+    function updatePortfolioFieldDirtyState() {
+      const current = normalizePortfolioSettings(getPortfolioSettings());
+      const applied = getAppliedPortfolioSettings();
+      Object.entries(portfolioControlMap()).forEach(([key, el]) => {
+        if (!el) return;
+        const dirty = JSON.stringify(current[key]) !== JSON.stringify(applied[key]);
+        el.classList.toggle("portfolio-field-dirty", dirty);
+      });
+    }
+
+    function updatePortfolioDirtyState(forceDirty = null) {
+      portfolioDirty = forceDirty === null ? !portfolioSettingsEqual(getPortfolioSettings(), getAppliedPortfolioSettings()) : !!forceDirty;
+      app.classList.toggle("portfolio-dirty", portfolioDirty && activeMode === "portfolio");
+      updatePortfolioFieldDirtyState();
+      $("portfolioSettingsRefresh")?.classList.toggle("disabled", !portfolioDirty);
+      if ($("portfolioSettingsRefresh")) $("portfolioSettingsRefresh").disabled = !portfolioDirty;
+      if ($("portfolioChartRefresh")) $("portfolioChartRefresh").disabled = !portfolioDirty;
+    }
+
+    function markPortfolioDirty() {
+      updatePortfolioDirtyState();
+      saveSettings();
+    }
+
+    function applyPortfolioSettings() {
+      appliedPortfolioSettings = normalizePortfolioSettings(getPortfolioSettings());
+      updatePortfolioDirtyState(false);
+      buildPortfolioRows();
+      autoY();
+      updateMetrics();
+      saveSettings();
+      draw();
+    }
+
     function getPortfolioSettings() {
       return {
         btcHoldings: Math.max(0, settingNumber(controls.portfolioBtcHoldings?.value, 1) || 0),
@@ -7933,6 +8139,7 @@
       buildCycleCache();
       buildStrategyRows();
       buildPortfolioRows();
+      updatePortfolioDirtyState();
       if (!suppressAutoscale) autoY();
       updateMetrics();
       draw();
@@ -8261,6 +8468,7 @@
       ctx.restore();
       drawAxes();
       if (isMobilePopupMode() && !hover) ensureMobileHover();
+      if (popupMode === "window" && !hover) ensurePopupWindowHover();
       if (hover) drawHover();
       flushDeferredLabels();
     }
@@ -8763,7 +8971,7 @@
 
     function buildPortfolioRows() {
       portfolioRows = [];
-      const ps = getPortfolioSettings();
+      const ps = getAppliedPortfolioSettings();
       const startT = today.getTime();
       let btcHoldings = ps.btcHoldings;
       let mstrShares = ps.mstrShares;
@@ -8954,6 +9162,21 @@
       ctx.restore();
     }
 
+    function popupHtml(rows, t) {
+      return `<div class="date">${formatDate(new Date(t))}</div>` +
+        rows.map(row => row.separator
+          ? `<div class="row separator"></div>`
+          : `<div class="row" style="color:${row.color || "#dbe6ff"}"><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.value)}</strong></div>`
+        ).join("");
+    }
+
+    function updatePopupWindow(rows, t) {
+      const panel = $("popupWindow");
+      const body = $("popupWindowBody");
+      if (!panel || !body) return;
+      body.innerHTML = popupHtml(rows, t);
+    }
+
     function drawHover() {
       const t = pxToX(hover.x);
       const yVal = pxToY(hover.y);
@@ -8969,16 +9192,17 @@
 
       const rows = activeMode === "mstr" ? strategyPopupRows(t, yVal) : activeMode === "portfolio" ? portfolioPopupRows(t, yVal) : btcPopupRows(t, yVal);
       drawPopupDots(rows, t);
+      const mobileMode = isMobilePopupMode();
+      if (popupMode === "window" && !mobileMode) {
+        tooltip.style.display = "none";
+        updatePopupWindow(rows, t);
+        return;
+      }
       const close = `<button type="button" class="tooltip-close" id="tooltipClose">×</button>`;
       const grab = `<span class="tooltip-grab" id="tooltipGrab" title="Drag popup to another corner" aria-label="Drag popup to another corner">☰</span>`;
-      const mobileMode = isMobilePopupMode();
       tooltip.classList.toggle("anchored", !mobileMode && tooltipAnchorMode);
       tooltip.classList.toggle("mobile", mobileMode);
-      tooltip.innerHTML = close + grab + `<div class="date">${formatDate(new Date(t))}</div>` +
-        rows.map(row => row.separator
-          ? `<div class="row separator"></div>`
-          : `<div class="row" style="color:${row.color || "#dbe6ff"}"><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.value)}</strong></div>`
-        ).join("");
+      tooltip.innerHTML = close + grab + popupHtml(rows, t);
 
       const closeBtn = $("tooltipClose");
       if (closeBtn) closeBtn.addEventListener("click", e => {
@@ -9032,13 +9256,7 @@
     }
 
     function toggleTooltipAnchorMode() {
-      tooltipAnchorMode = !tooltipAnchorMode;
-      const btn = $("toggleTooltipAnchor");
-      if (btn) {
-        btn.classList.toggle("active", tooltipAnchorMode);
-        btn.title = tooltipAnchorMode ? "Popup anchored to corner" : "Popup follows pointer";
-      }
-      if (hover) draw();
+      setPopupMode(popupMode === "anchor" ? "follow" : "anchor");
     }
 
     function onTooltipPointerDown(e) {
@@ -10125,7 +10343,7 @@
       if (!item.options) item.options = {};
       if (!item.options.items) item.options.items = {};
       if (item.key === "bandPrices") {
-        if (typeof item.options.shortenLabels !== "boolean") item.options.shortenLabels = false;
+        if (typeof item.options.shortenLabels !== "boolean") item.options.shortenLabels = true;
         if (typeof item.options.showDots !== "boolean") item.options.showDots = true;
         if (!Number.isFinite(Number(item.options.dotSize))) item.options.dotSize = defaultPopupBandDotSettings.size;
         if (!Number.isFinite(Number(item.options.dotGlowSize))) item.options.dotGlowSize = defaultPopupBandDotSettings.glowSize;
@@ -10136,7 +10354,7 @@
       }
       if (item.key === "mstrRainbowPrices") {
         if (!item.options.labelStyle) item.options.labelStyle = "name";
-        if (typeof item.options.shortenLabels !== "boolean") item.options.shortenLabels = false;
+        if (typeof item.options.shortenLabels !== "boolean") item.options.shortenLabels = true;
         if (typeof item.options.showDots !== "boolean") item.options.showDots = true;
         if (!Number.isFinite(Number(item.options.dotSize))) item.options.dotSize = defaultPopupBandDotSettings.size;
         if (!Number.isFinite(Number(item.options.dotGlowSize))) item.options.dotGlowSize = defaultPopupBandDotSettings.glowSize;
@@ -10334,6 +10552,7 @@
         metrics: metricConfig,
         popup: popupConfig,
         popupPriceFormat: controls.popupPriceFormat?.value || "compact2",
+        popupMode,
         strategy: getStrategySettings(),
         portfolio: getPortfolioSettings()
       };
@@ -10369,6 +10588,7 @@
         if (data.athBandMultiplier) controls.athBandMultiplier.value = data.athBandMultiplier;
         if (typeof data.atlUsesPreviousAth === "boolean") controls.atlUsesPreviousAth.checked = data.atlUsesPreviousAth;
         if (data.popupPriceFormat && controls.popupPriceFormat) controls.popupPriceFormat.value = data.popupPriceFormat;
+        if (data.popupMode && ["follow", "anchor", "window"].includes(data.popupMode)) popupMode = data.popupMode;
         if (Array.isArray(data.bands)) bands = cloneBands(data.bands);
         if (Array.isArray(data.mstrBands)) mstrBands = cloneBands(data.mstrBands);
         if (data.metrics) metricConfig = normalizeConfig(defaultMetricConfig, data.metrics);
