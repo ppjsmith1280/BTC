@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bitcoin Power Law MSTR Dashboard v6</title>
+  <title>Bitcoin Power Law MSTR Dashboard v23</title>
   <style>
     :root {
       --bg: #070a12;
@@ -47,11 +47,15 @@
       min-height: 0;
       display: grid;
       grid-template-rows: auto 1fr auto;
-      gap: 8px;
-      transition: margin-right .22s ease;
+      gap: 10px;
     }
-    .app.settings-open main,
-    .app.info-open main { margin-right: 400px; }
+    .chart-card, .status-bar { transition: margin-right .22s ease; }
+    .app.settings-open .chart-card,
+    .app.settings-open .status-bar,
+    .app.info-open .chart-card,
+    .app.info-open .status-bar {
+      margin-right: calc(min(426px, calc(100vw - 24px)) + 10px);
+    }
     .header, .status-bar, .chart-card {
       background: rgba(9,13,23,.74);
       border: 1px solid var(--line);
@@ -119,7 +123,7 @@
       background: transparent;
       color: #cbd5ea;
       border-radius: 11px;
-      padding: 8px 12px;
+      padding: 8px 10px;
       font-size: 12px;
       font-weight: 850;
       cursor: pointer;
@@ -158,6 +162,7 @@
       border-radius: 12px;
     }
     .icon-btn svg { width: 23px; height: 23px; display: block; }
+    .icon-btn.active { border-color: rgba(247,147,26,.70); box-shadow: 0 0 0 1px rgba(247,147,26,.25), 0 0 18px rgba(247,147,26,.20); color: #fff; }
     .calendar-icon { position: relative; width: 24px; height: 24px; display: inline-grid; place-items: center; }
     .calendar-icon .calendar-day {
       position: absolute;
@@ -215,7 +220,54 @@
       font-weight: 900;
       line-height: 1;
     }
-    .tooltip .date { font-weight: 850; margin-bottom: 8px; }
+
+    .tooltip.anchored { pointer-events: auto; }
+    .app.mobile-popup-mode .tooltip {
+      display: block;
+      left: 0 !important;
+      right: 0;
+      top: calc(50% + 2px) !important;
+      bottom: 0;
+      min-width: 0;
+      max-width: none;
+      max-height: none;
+      border-radius: 18px 18px 0 0;
+      pointer-events: auto;
+      padding: 12px 14px 16px;
+      background: rgba(6,9,16,.96);
+    }
+    .app.mobile-popup-mode .tooltip-close,
+    .app.mobile-popup-mode .tooltip-grab {
+      display: none !important;
+    }
+    .tooltip-grab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      height: auto;
+      margin: 0 8px 4px 0;
+      border: 0;
+      background: transparent;
+      color: #cfe0ff;
+      cursor: grab;
+      font-size: 20px;
+      line-height: 1;
+      float: left;
+      opacity: .95;
+    }
+    .tooltip.anchored .tooltip-grab { display: inline-flex; }
+    .tooltip:not(.anchored) .tooltip-grab { display: none; }
+    .band.fair-band { grid-template-columns: auto minmax(150px, 1fr) 64px 64px; }
+    .band-name-input {
+      width: 100%;
+      min-width: 70px;
+      padding: 7px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      background: rgba(4,7,14,.42);
+    }
+    .tooltip .date { font-weight: 850; margin-bottom: 8px; text-align: right; color: #f3f7ff; }
     .tooltip .row {
       display: flex;
       justify-content: space-between;
@@ -224,6 +276,7 @@
       color: var(--muted);
     }
     .tooltip .row strong { color: inherit; font-weight: 750; white-space: nowrap; }
+    .tooltip .row .dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; margin-right: 7px; vertical-align: 1px; box-shadow: 0 0 8px currentColor; background: currentColor; }
     .tooltip .row.separator {
       margin-top: 6px;
       padding-top: 7px;
@@ -260,11 +313,11 @@
     .metric-toggle { display: none; }
     aside {
       position: fixed;
-      top: 12px;
-      right: 12px;
-      bottom: 12px;
+      top: var(--drawer-top, 74px);
+      right: 8px;
+      bottom: 8px;
       z-index: 30;
-      width: min(382px, calc(100vw - 24px));
+      width: min(426px, calc(100vw - 24px));
       min-height: 0;
       overflow: auto;
       background: var(--panel);
@@ -309,7 +362,7 @@
     .small { color: var(--muted); font-size: 12px; line-height: 1.35; }
     .settings-tabs {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 6px;
     }
     .settings-tab {
@@ -317,10 +370,11 @@
       background: #182131;
       color: #d9e4fa;
       border-radius: 12px;
-      padding: 8px 6px;
+      padding: 8px 4px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 750;
+      min-width: 0;
     }
     .settings-tab.active {
       background: #213a66;
@@ -377,7 +431,7 @@
     .band-list, .metric-list { display: grid; gap: 8px; }
     .band {
       display: grid;
-      grid-template-columns: auto 1fr 58px 58px;
+      grid-template-columns: auto minmax(150px, 1fr) 64px;
       gap: 7px;
       align-items: center;
       padding: 7px;
@@ -398,14 +452,19 @@
       min-width: 0;
       font-size: 12px;
       color: #e8efff;
+      display: flex;
+      align-items: center;
+      gap: 7px;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
     }
+    .band-name .swatch { flex: 0 0 auto; margin-right: 0; }
+    .band-name .band-name-input { flex: 1 1 auto; }
     .band input[type="number"] { padding: 7px 6px; border-radius: 10px; font-size: 12px; }
+    .band input.band-boundary { max-width: 64px; }
     .config-row {
       display: grid;
-      grid-template-columns: 28px auto 1fr;
+      grid-template-columns: 28px auto 1fr auto;
       gap: 8px;
       align-items: center;
       padding: 8px 10px;
@@ -413,6 +472,70 @@
       border-radius: 12px;
       background: rgba(255,255,255,.045);
     }
+    .config-row.has-options {
+      grid-template-columns: 28px auto 1fr auto;
+    }
+    .config-row .row-options {
+      grid-column: 1 / -1;
+      display: none;
+      margin-top: 8px;
+      padding: 10px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      background: rgba(4,7,14,.24);
+      border-radius: 10px;
+    }
+    .config-row.options-open .row-options { display: grid; gap: 8px; }
+    .roll-toggle {
+      width: 28px;
+      height: 28px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: #dbe6ff;
+      cursor: pointer;
+      font-weight: 900;
+      transition: transform .16s ease;
+    }
+    .roll-toggle .chev { display: block; transform: rotate(0deg); transition: transform .16s ease; }
+    .config-row.options-open .roll-toggle .chev { transform: rotate(180deg); }
+    .submenu-grid { display: grid; gap: 7px; }
+    .dot-options-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      align-items: end;
+    }
+    .dot-option-block {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .dot-option-block span {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.15;
+    }
+    .dot-option-block input {
+      width: 64px;
+      min-width: 64px;
+      justify-self: start;
+      padding: 6px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .submenu-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: #dbe6ff;
+    }
+    .submenu-row label { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+    .submenu-row select { width: auto; min-width: 120px; padding: 6px 8px; border-radius: 9px; font-size: 12px; }
+    .submenu-title { font-size: 11px; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
     .drag-handle {
       cursor: grab;
       color: #9fb0ca;
@@ -536,15 +659,19 @@
       line-height: 1;
     }
     .divider-remove {
-      width: 24px;
-      height: 24px;
+      width: 16px;
+      height: 16px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,.18);
       background: rgba(255,255,255,.06);
       color: #dbe6ff;
       cursor: pointer;
+      font-size: 11px;
       font-weight: 900;
       line-height: 1;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
     }
     .config-row {
       background: rgba(255,255,255,.028);
@@ -567,14 +694,17 @@
       body { overflow: hidden; }
       .app { height: 100dvh; padding: 5px 5px max(5px, env(safe-area-inset-bottom)); }
       main { grid-template-rows: auto minmax(0, 1fr) auto; gap: 5px; }
-      .app.settings-open main, .app.info-open main { margin-right: 0; }
+      .app.settings-open .chart-card,
+      .app.settings-open .status-bar,
+      .app.info-open .chart-card,
+      .app.info-open .status-bar { margin-right: 0; }
       .backdrop.open { display: block; }
       aside { top: 10px; right: 10px; bottom: 10px; width: min(390px, calc(100vw - 20px)); }
       .header { padding: 7px 8px; gap: 6px; }
       .brand-wrap { gap: 7px; flex-wrap: wrap; }
       .brand-mark { width: 32px; height: 32px; font-size: 21px; }
       .brand-text { font-size: clamp(17px, 5.7vw, 22px); white-space: normal; }
-      .mode-tab { padding: 7px 9px; font-size: 11px; }
+      .mode-tab { padding: 7px 8px; font-size: 11px; }
       .actions { gap: 5px; }
       .icon-btn { width: 36px; height: 36px; border-radius: 10px; }
       .icon-btn svg { width: 21px; height: 21px; }
@@ -630,6 +760,7 @@
           <div class="mode-tabs" aria-label="Dashboard tabs">
             <button class="mode-tab active" data-mode="btc">BTC</button>
             <button class="mode-tab" data-mode="mstr">MSTR</button>
+            <button class="mode-tab" data-mode="portfolio">Portfolio</button>
           </div>
         </div>
         <div class="actions">
@@ -644,6 +775,12 @@
           </button>
           <button class="btn icon-btn" id="jumpDateBtn" title="Jump to selected date" aria-label="Jump to selected date">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9h18"/><path d="M12 12v5M9.5 14.5h5"/></svg>
+          </button>
+          <button class="btn icon-btn" id="toggleInflation" title="Inflation-adjust chart" aria-label="Inflation-adjust chart">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18V7"/><path d="M4 18h16"/><path d="M7 15l4-4 3 3 5-7"/><path d="M16 7h3v3"/><path d="M9.5 6.8c.5-.6 1.4-1 2.5-1 1.5 0 2.6.7 2.6 1.8 0 1.2-1.1 1.7-2.8 2.1-1.8.4-2.8.9-2.8 2.1 0 1.2 1.1 2 2.9 2 1.1 0 2-.3 2.7-1"/></svg>
+          </button>
+          <button class="btn icon-btn" id="toggleTooltipAnchor" title="Anchor popup to corner" aria-label="Anchor popup to corner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>
           </button>
           <button class="btn icon-btn" id="openInfo" title="Chart info" aria-label="Chart info">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M9.75 9a2.35 2.35 0 0 1 4.55.8c0 1.9-2.3 2.05-2.3 4"/><path d="M12 17.4h.01"/></svg>
@@ -674,8 +811,9 @@
           <button class="settings-tab active" data-panel="model">Model <span class="help" data-help="BTC formula constants and power-law preset settings.">?</span></button>
           <button class="settings-tab" data-panel="view">View <span class="help" data-help="Display controls, scale, overlays, and rainbow transparency.">?</span></button>
           <button class="settings-tab" data-panel="bands">Bands <span class="help" data-help="Rainbow band multiplier settings.">?</span></button>
-          <button class="settings-tab" data-panel="cycles">ATH/ATL <span class="help" data-help="Cycle timing and ATH/ATL overlay settings.">?</span></button>
+          <button class="settings-tab" data-panel="cycles">ATH/ATL <span class="help" data-help="Cycle timing and ATH/ATL projection settings.">?</span></button>
           <button class="settings-tab" data-panel="strategy">MSTR <span class="help" data-help="MSTR projection assumptions from your spreadsheet model.">?</span></button>
+          <button class="settings-tab" data-panel="portfolio">Portfolio <span class="help" data-help="Current BTC and MSTR holdings plus DCA settings for the portfolio projection chart.">?</span></button>
           <button class="settings-tab" data-panel="metrics">Metrics <span class="help" data-help="Choose and reorder the bottom metric tiles.">?</span></button>
           <button class="settings-tab" data-panel="popup">Popup <span class="help" data-help="Choose and reorder rows shown in the chart hover popup.">?</span></button>
           <button class="settings-tab" data-panel="data">Data <span class="help" data-help="Load BTC/MSTR historical data, export files, and access data sources.">?</span></button>
@@ -751,11 +889,18 @@
             <label class="toggle"><input id="showBottom" type="checkbox" checked><span>Bottom price line</span></label>
             <label class="toggle"><input id="showHalvings" type="checkbox" checked><span>Halving guide lines</span></label>
             <label class="toggle"><input id="showCsv" type="checkbox" checked><span>Historical BTC price line</span></label>
-            <label class="toggle"><input id="showAthAtl" type="checkbox" checked><span>ATH/ATL overlay</span></label>
+            <label class="toggle"><input id="showAthAtl" type="checkbox" checked><span>ATH/ATL projection</span></label>
           </div>
           <div class="control" style="margin-top:12px">
             <label class="label-row" for="rainbowOpacity">Rainbow transparency: <span><span id="rainbowOpacityLabel">28</span>%</span></label>
             <input id="rainbowOpacity" type="range" min="5" max="60" step="1" value="28">
+          </div>
+          <div class="toggles" style="margin-top:12px">
+            <label class="toggle"><input id="inflationAdjusted" type="checkbox"><span>Inflation-adjust chart to today's dollars</span></label>
+          </div>
+          <div class="control" style="margin-top:10px">
+            <label class="label-row" for="inflationRate">Annual inflation rate (%) <button class="help" data-help="Annual inflation percentage. When inflation adjustment is on, past prices are compounded forward and future prices are discounted back so the chart is shown in today's dollars.">?</button></label>
+            <input id="inflationRate" type="number" value="3" step="0.1" min="0">
           </div>
         </div>
       </div>
@@ -801,15 +946,15 @@
 
       <div class="panel" data-panel-content="cycles">
         <div class="panel-section">
-          <div class="panel-title"><h2>ATH/ATL overlay</h2></div>
-          <div class="toggles" style="margin-bottom:12px">
-            <label class="toggle"><input id="atlUsesPreviousAth" type="checkbox"><span>Next ATL equals ATH before previous</span></label>
+          <div class="panel-title"><h2>ATH/ATL projection</h2></div>
+          <div class="control" style="margin-bottom:12px">
+            <label for="cycleProjectionMode">Projection type</label>
+            <select id="cycleProjectionMode">
+              <option value="interval" selected>Cycle Interval Projection</option>
+              <option value="halvingOffset">Halving Offset Projection</option>
+            </select>
           </div>
           <div class="row-2">
-            <div class="control">
-              <label for="cycleAnchorDate">Anchor ATL date</label>
-              <input id="cycleAnchorDate" type="date" value="2026-10-05">
-            </div>
             <div class="control">
               <label for="cycleLabelMode">Label detail</label>
               <select id="cycleLabelMode">
@@ -818,21 +963,46 @@
                 <option value="none">No labels</option>
               </select>
             </div>
+            <div></div>
           </div>
-          <div class="row-2">
-            <div class="control">
-              <label for="atlToAthDays">ATL → ATH days</label>
-              <input id="atlToAthDays" type="number" value="1064" min="1" step="1">
+          <div id="cycleIntervalSettings">
+            <div class="toggles" style="margin-bottom:12px">
+              <label class="toggle"><input id="atlUsesPreviousAth" type="checkbox"><span>Next ATL equals ATH before previous</span></label>
             </div>
-            <div class="control">
-              <label for="athToAtlDays">ATH → ATL days</label>
-              <input id="athToAtlDays" type="number" value="364" min="1" step="1">
+            <div class="row-2">
+              <div class="control">
+                <label for="cycleAnchorDate">Anchor ATL date</label>
+                <input id="cycleAnchorDate" type="date" value="2026-10-05">
+              </div>
+              <div></div>
+            </div>
+            <div class="row-2">
+              <div class="control">
+                <label for="atlToAthDays">ATL → ATH days</label>
+                <input id="atlToAthDays" type="number" value="1064" min="1" step="1">
+              </div>
+              <div class="control">
+                <label for="athToAtlDays">ATH → ATL days</label>
+                <input id="athToAtlDays" type="number" value="364" min="1" step="1">
+              </div>
+            </div>
+          </div>
+          <div id="halvingOffsetSettings" style="display:none">
+            <div class="row-2">
+              <div class="control">
+                <label for="halvingAtlOffsetDays">ATL days before halving</label>
+                <input id="halvingAtlOffsetDays" type="number" value="500" min="1" step="1">
+              </div>
+              <div class="control">
+                <label for="halvingAthOffsetDays">ATH days after halving</label>
+                <input id="halvingAthOffsetDays" type="number" value="500" min="1" step="1">
+              </div>
             </div>
           </div>
           <div class="row-2">
             <div class="control" id="atlBandControl">
               <label for="atlBandMultiplier">ATL band multiplier</label>
-              <input id="atlBandMultiplier" type="number" value="0.42" min="0.01" step="0.01">
+              <input id="atlBandMultiplier" type="number" value="0.38" min="0.01" step="0.01">
             </div>
             <div class="control">
               <label for="athBandMultiplier">ATH band multiplier</label>
@@ -850,12 +1020,12 @@
             <label class="toggle"><input id="showMstrFair" type="checkbox" checked><span>MSTR fair value line</span></label>
           </div>
           <div class="row-2">
-            <div class="control"><label for="mnavBase">Base mNAV</label><input id="mnavBase" type="number" value="0.75" step="0.01"></div>
+            <div class="control"><label for="mnavBase">Base mNAV</label><input id="mnavBase" type="number" value="0.65" step="0.01"></div>
             <div class="control"><label for="mnavMax">Max mNAV</label><input id="mnavMax" type="number" value="1.65" step="0.01"></div>
           </div>
           <div class="row-2">
             <div class="control"><label for="mnavCap">BPS mNAV cap</label><input id="mnavCap" type="number" value="1.65" step="0.01"></div>
-            <div class="control"><label for="startBps">Starting BTC/share in sats</label><input id="startBps" type="number" value="218046" step="1"></div>
+            <div class="control"><label for="startBps">Starting BTC/share in sats</label><input id="startBps" type="text" value="218,046" inputmode="numeric"></div>
           </div>
           <div class="row-2">
             <div class="control"><label for="terminalYield">Terminal BTC/share yield</label><input id="terminalYield" type="number" value="0.02" step="0.001"></div>
@@ -866,13 +1036,36 @@
             <div class="control"><label for="bearCrashPower">Bear-market mNAV crash power</label><input id="bearCrashPower" type="number" value="1" step="0.01"></div>
           </div>
           <div class="row-2">
-            <div class="control"><label for="startBtcHoldings">Starting BTC holdings</label><input id="startBtcHoldings" type="number" value="883000" step="1000"></div>
-            <div class="control"><label for="scarcityStart">Scarcity starts at BTC holdings</label><input id="scarcityStart" type="number" value="1500000" step="1000"></div>
+            <div class="control"><label for="startBtcHoldings">Starting BTC holdings</label><input id="startBtcHoldings" type="text" value="883,000" inputmode="numeric"></div>
+            <div class="control"><label for="scarcityStart">Scarcity starts at BTC holdings</label><input id="scarcityStart" type="text" value="1,500,000" inputmode="numeric"></div>
           </div>
           <div class="row-2">
-            <div class="control"><label for="maxBtcHoldings">Practical max BTC holdings</label><input id="maxBtcHoldings" type="number" value="2000000" step="1000"></div>
+            <div class="control"><label for="maxBtcHoldings">Practical max BTC holdings</label><input id="maxBtcHoldings" type="text" value="2,000,000" inputmode="numeric"></div>
             <div class="control"><label for="scarcityBrakePower">BTC scarcity brake power</label><input id="scarcityBrakePower" type="number" value="100" step="1"></div>
           </div>
+        </div>
+      </div>
+
+      <div class="panel" data-panel-content="portfolio">
+        <div class="panel-section">
+          <div class="panel-title"><h2>Portfolio assumptions</h2></div>
+          <p class="small">Portfolio value = BTC holdings × BTC price + MSTR shares × MSTR price. DCA amounts are in dollars and buy more BTC or MSTR shares at the projected price on each purchase date.</p>
+          <div class="row-2">
+            <div class="control"><label for="portfolioBtcHoldings">Current BTC holdings</label><input id="portfolioBtcHoldings" type="text" value="1.00" inputmode="decimal"></div>
+            <div class="control"><label for="portfolioMstrShares">Current MSTR shares</label><input id="portfolioMstrShares" type="text" value="0" inputmode="decimal"></div>
+          </div>
+          <div class="panel-title" style="margin-top:8px"><h2>BTC DCA</h2></div>
+          <div class="row-2">
+            <div class="control"><label for="portfolioBtcDcaAmount">BTC DCA amount ($)</label><input id="portfolioBtcDcaAmount" type="text" value="0" inputmode="decimal"></div>
+            <div class="control"><label for="portfolioBtcDcaFrequency">BTC DCA frequency</label><select id="portfolioBtcDcaFrequency"><option value="none" selected>Off</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+          </div>
+          <div class="control"><label for="portfolioBtcDcaStart">BTC DCA start date</label><input id="portfolioBtcDcaStart" type="date" value="2026-06-24"></div>
+          <div class="panel-title" style="margin-top:8px"><h2>MSTR DCA</h2></div>
+          <div class="row-2">
+            <div class="control"><label for="portfolioMstrDcaAmount">MSTR DCA amount ($)</label><input id="portfolioMstrDcaAmount" type="text" value="0" inputmode="decimal"></div>
+            <div class="control"><label for="portfolioMstrDcaFrequency">MSTR DCA frequency</label><select id="portfolioMstrDcaFrequency"><option value="none" selected>Off</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+          </div>
+          <div class="control"><label for="portfolioMstrDcaStart">MSTR DCA start date</label><input id="portfolioMstrDcaStart" type="date" value="2026-06-24"></div>
         </div>
       </div>
 
@@ -883,6 +1076,7 @@
           <div class="data-subtabs settings-subtabs" role="tablist" aria-label="Metric settings tabs">
             <button class="data-subtab active" data-settings-subtab="metrics-btc" type="button">BTC</button>
             <button class="data-subtab" data-settings-subtab="metrics-mstr" type="button">MSTR</button>
+            <button class="data-subtab" data-settings-subtab="metrics-portfolio" type="button">Portfolio</button>
           </div>
           <div class="data-tab active" data-settings-subcontent="metrics-btc">
             <div class="settings-subhead">BTC metrics</div>
@@ -892,6 +1086,10 @@
             <div class="settings-subhead">MSTR metrics</div>
             <div class="metric-list" id="metricListMstr"></div>
           </div>
+          <div class="data-tab" data-settings-subcontent="metrics-portfolio">
+            <div class="settings-subhead">Portfolio metrics</div>
+            <div class="metric-list" id="metricListPortfolio"></div>
+          </div>
         </div>
       </div>
 
@@ -899,9 +1097,20 @@
         <div class="panel-section">
           <div class="panel-title"><h2>Chart popup rows</h2></div>
           <p class="small">Choose what appears in the hover/touch popup. Use the three-bar handle to drag rows into the order you want.</p>
+          <div class="control">
+            <label class="label-row" for="popupPriceFormat">Popup price display <button class="help" data-help="Controls how prices are displayed inside the hover popup only. Variable compact keeps about four significant digits when using K, M, B, or T suffixes.">?</button></label>
+            <select id="popupPriceFormat">
+              <option value="compact0">Compact, no decimals</option>
+              <option value="compact1">Compact, 1 decimal</option>
+              <option value="compact2" selected>Compact, 2 decimals</option>
+              <option value="variable">Variable compact, 4 digits</option>
+              <option value="full">Unabbreviated</option>
+            </select>
+          </div>
           <div class="data-subtabs settings-subtabs" role="tablist" aria-label="Popup settings tabs">
             <button class="data-subtab active" data-settings-subtab="popup-btc" type="button">BTC</button>
             <button class="data-subtab" data-settings-subtab="popup-mstr" type="button">MSTR</button>
+            <button class="data-subtab" data-settings-subtab="popup-portfolio" type="button">Portfolio</button>
           </div>
           <div class="data-tab active" data-settings-subcontent="popup-btc">
             <div class="subhead-row"><div class="settings-subhead">BTC popup</div><button class="btn tiny add-divider" id="addDividerBtc" title="Add section divider" aria-label="Add BTC popup section divider"><span class="plus-divider-icon"><span>+</span><span class="divider-line"></span></span></button></div>
@@ -910,6 +1119,10 @@
           <div class="data-tab" data-settings-subcontent="popup-mstr">
             <div class="subhead-row"><div class="settings-subhead">MSTR popup</div><button class="btn tiny add-divider" id="addDividerMstr" title="Add section divider" aria-label="Add MSTR popup section divider"><span class="plus-divider-icon"><span>+</span><span class="divider-line"></span></span></button></div>
             <div class="metric-list" id="popupListMstr"></div>
+          </div>
+          <div class="data-tab" data-settings-subcontent="popup-portfolio">
+            <div class="subhead-row"><div class="settings-subhead">Portfolio popup</div><button class="btn tiny add-divider" id="addDividerPortfolio" title="Add section divider" aria-label="Add portfolio popup section divider"><span class="plus-divider-icon"><span>+</span><span class="divider-line"></span></span></button></div>
+            <div class="metric-list" id="popupListPortfolio"></div>
           </div>
         </div>
       </div>
@@ -961,7 +1174,7 @@
         <div class="settings-head-row">
           <div>
             <h2>Chart info</h2>
-            <div class="small">How the BTC and MSTR models are calculated.</div>
+            <div class="small">How the BTC, MSTR, and portfolio models are calculated.</div>
           </div>
           <button class="btn tiny" id="closeInfo">Close</button>
         </div>
@@ -976,8 +1189,12 @@
           <p>The colored bands are multipliers around the base BTC power-law line. They are valuation zones, not separate formulas.</p>
         </div>
         <div class="info-card">
-          <h3>ATH / ATL timing overlay</h3>
+          <h3>ATH / ATL timing projection</h3>
           <p>The overlay starts from an anchor ATL date, projects 1,064 days to ATH, then 364 days back to ATL. The recovery point is 700 days after ATL and is used by the Strategy model.</p>
+        </div>
+        <div class="info-card">
+          <h3>Portfolio projection</h3>
+          <p>The Portfolio tab combines user-entered BTC holdings and MSTR shares into a single projected portfolio value. Optional BTC and MSTR DCA settings add new purchases on a daily, weekly, or monthly cadence using the price projected for each purchase date.</p>
         </div>
         <div class="info-card">
           <h3>MSTR projection</h3>
@@ -1001,8 +1218,16 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV9";
-    const PRELOADED_CSV = String.raw`2026-06-17,64418
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV23";
+    const PRELOADED_CSV = String.raw`2026-06-25,59721.68
+2026-06-24,60995.13
+2026-06-23,62668.02
+2026-06-22,63952.11
+2026-06-21,63237.54
+2026-06-20,64239.68
+2026-06-19,63540.84
+2026-06-18,62896.47
+2026-06-17,64418
 2026-06-16,65601
 2026-06-15,66289
 2026-06-14,65710
@@ -6622,7 +6847,10 @@
 2011-01-30,0
 `;
 
-    const PRELOADED_MSTR_CSV = String.raw`2026-06-22,106.54
+    const PRELOADED_MSTR_CSV = String.raw`2026-06-24,94.69
+2026-06-23,102.48
+2026-06-22,106.54
+2026-06-21,116.21
 2026-06-15,129.38
 2026-06-08,122.85
 2026-06-01,142.69
@@ -6948,14 +7176,14 @@
     ];
 
     const defaultMstrBands = [
-      { name: "Deep discount", lower: 0.25, upper: 0.50, color: "#2f57ff", visible: true },
+      { name: "Deep", lower: 0.25, upper: 0.50, color: "#2f57ff", visible: true },
       { name: "Discount", lower: 0.50, upper: 0.75, color: "#2cb8ff", visible: true },
-      { name: "Base value", lower: 0.75, upper: 1.00, color: "#26d07c", visible: true },
-      { name: "Fair premium", lower: 1.00, upper: 1.25, color: "#a5dc43", visible: true },
-      { name: "High premium", lower: 1.25, upper: 1.65, color: "#ffd84d", visible: true },
-      { name: "Bull premium", lower: 1.65, upper: 2.10, color: "#ff9a3d", visible: true },
-      { name: "Bubble premium", lower: 2.10, upper: 3.00, color: "#ff5b5b", visible: true },
-      { name: "Extreme premium", lower: 3.00, upper: 4.50, color: "#b455ff", visible: true }
+      { name: "Base", lower: 0.75, upper: 1.00, color: "#26d07c", visible: true },
+      { name: "Fair value", lower: 1.00, upper: 1.25, color: "#a5dc43", visible: true },
+      { name: "High", lower: 1.25, upper: 1.65, color: "#ffd84d", visible: true },
+      { name: "Bull", lower: 1.65, upper: 2.10, color: "#ff9a3d", visible: true },
+      { name: "Bubble", lower: 2.10, upper: 3.00, color: "#ff5b5b", visible: true },
+      { name: "Extreme", lower: 3.00, upper: 4.50, color: "#b455ff", visible: true }
     ];
 
     const metricCatalog = {
@@ -6964,8 +7192,8 @@
         { key: "todayBottom", label: "Today bottom", visible: true, help: "The active BTC power-law bottom value for today using the bottom multiplier." },
         { key: "latestHistorical", label: "Latest historical", visible: true, help: "The newest BTC close found in the loaded historical CSV." },
         { key: "visibleRange", label: "Visible range", visible: true, help: "The date range currently visible on the chart." },
-        { key: "nextAth", label: "Next ATH overlay", visible: true, help: "The next projected BTC ATH point from the ATH/ATL timing overlay." },
-        { key: "nextAtl", label: "Next ATL overlay", visible: false, help: "The next projected BTC ATL point from the ATH/ATL timing overlay." },
+        { key: "nextAth", label: "Next ATH projection", visible: true, help: "The next projected BTC ATH point from the ATH/ATL timing overlay." },
+        { key: "nextAtl", label: "Next ATL projection", visible: false, help: "The next projected BTC ATL point from the ATH/ATL timing overlay." },
         { key: "nextHalving", label: "Next halving", visible: false, help: "The next estimated Bitcoin halving guide date shown on the chart." },
         { key: "todayBase", label: "Today base PL", visible: false, help: "The raw BTC power-law value today before the fair or bottom multipliers." },
         { key: "endDateBase", label: "End date base", visible: false, help: "The raw BTC power-law value at the projection horizon end date." },
@@ -6985,6 +7213,14 @@
         { key: "terminalYield", label: "Terminal BPS yield", visible: false, help: "The terminal BTC-per-share yield assumption from Strategy settings." },
         { key: "maxBps", label: "Max sats/share", visible: false, help: "The BTC-per-share ceiling implied by starting holdings and practical max BTC holdings." },
         { key: "maxMnav", label: "Max mNAV", visible: false, help: "The max mNAV assumption from Strategy settings." }
+      ],
+      portfolio: [
+        { key: "portfolioCurrent", label: "Current portfolio", visible: true, help: "Current projected total portfolio value at today's date." },
+        { key: "portfolioEnd", label: "End portfolio", visible: true, help: "Projected total portfolio value at the end of the model horizon." },
+        { key: "portfolioBtcHoldings", label: "BTC holdings", visible: true, help: "Projected BTC holdings at the end of the visible period." },
+        { key: "portfolioMstrShares", label: "MSTR shares", visible: true, help: "Projected MSTR shares at the end of the visible period." },
+        { key: "portfolioDca", label: "Total DCA spend", visible: true, help: "Projected cumulative dollars invested through BTC and MSTR DCA settings." },
+        { key: "visibleRange", label: "Visible range", visible: true, help: "The date range currently visible on the chart." }
       ]
     };
 
@@ -6993,39 +7229,73 @@
         { key: "cursorPrice", label: "Cursor price", visible: true, help: "The chart price under the cursor or touch point." },
         { key: "band", label: "Current band", visible: true, help: "The rainbow band containing the cursor price, when applicable." },
         { key: "separatorTop", label: "Section divider", visible: true, help: "A thin line dividing cursor values from model values." },
-        { key: "bandPrices", label: "Rainbow band prices", visible: true, help: "All visible rainbow band high/low values at the selected date." },
-        { key: "nearestCycle", label: "Nearest ATH/ATL", visible: true, help: "The nearest BTC ATH/ATL overlay point to the selected date." },
+        { key: "bandPrices", label: "Rainbow band prices", visible: true, help: "Shows BTC band levels at the selected date. Use the dropdown to choose which bands appear in the popup." },
+        { key: "nearestCycle", label: "Nearest ATH/ATL/RECOVER", visible: true, help: "The nearest BTC ATH, ATL, or RECOVER overlay point to the selected date." },
+        { key: "cycleOverlayValue", label: "ATH/ATL projection value", visible: false, help: "The interpolated BTC ATH/ATL/RECOVER projection value at the selected date." },
         { key: "btcBase", label: "Base power-law", visible: false, help: "The raw BTC power-law value at the selected date." },
         { key: "fairValue", label: "Fair value", visible: false, help: "The fair value at the selected date using the fair multiplier." },
         { key: "bottomLine", label: "Bottom line", visible: false, help: "The bottom value at the selected date using the bottom multiplier." },
         { key: "daysSinceGenesis", label: "Days since genesis", visible: false, help: "The number of days from Bitcoin genesis to the selected date." },
-        { key: "activeFormula", label: "Formula preset", visible: false, help: "The selected BTC power-law formula preset." }
+        { key: "activeFormula", label: "Formula preset", visible: false, help: "The selected BTC power-law formula preset." },
+        { key: "historicalActual", label: "Historical actual price", visible: false, help: "Shows the exact historical BTC close if the selected date has a loaded data row." }
       ],
       mstr: [
         { key: "cursorPrice", label: "Cursor price", visible: true, help: "The chart price under the cursor or touch point." },
         { key: "nearestEvent", label: "Nearest event", visible: true, help: "The nearest MSTR projection event to the selected date." },
+        { key: "cycleOverlayValue", label: "ATH/ATL projection value", visible: false, help: "The interpolated MSTR ATH/ATL/RECOVER projection value at the selected date." },
         { key: "separatorTop", label: "Section divider", visible: true, help: "A thin line dividing cursor values from event values." },
         { key: "mstrPrice", label: "MSTR price", visible: true, help: "Projected MSTR price at the nearest event." },
         { key: "btcPrice", label: "BTC price", visible: true, help: "Projected BTC price used at the nearest event." },
         { key: "mnav", label: "mNAV", visible: true, help: "Projected mNAV used at the nearest event." },
         { key: "satsPerShare", label: "Sats per share", visible: true, help: "Projected BTC per Strategy share, expressed in satoshis." },
         { key: "mstrRainbowBand", label: "Current MSTR band", visible: true, help: "The active MSTR rainbow band containing the cursor price, based on the selected MSTR rainbow mode." },
-        { key: "mstrRainbowPrices", label: "MSTR band prices", visible: true, help: "All visible MSTR band high/low values at the selected date. mNAV mode uses editable mNAV bands; BTC-derived mode converts BTC bands using projected mNAV and sats/share." },
-        { key: "mstrFairValue", label: "MSTR fair value", visible: true, help: "The projected 1.00 mNAV MSTR fair-value line at the selected date." },
+        { key: "mstrRainbowPrices", label: "MSTR band prices", visible: true, help: "Shows MSTR band levels at the selected date. Use the dropdown to choose which bands appear and whether labels use names, mNAV values, or both." },
+        { key: "mstrFairValue", label: "Fair value", visible: true, help: "The projected 1.00 mNAV fair-value line at the selected date." },
         { key: "mstrRainbowMode", label: "MSTR rainbow mode", visible: false, help: "The selected MSTR rainbow mode: off, mNAV bands, or BTC-derived bands." },
         { key: "eventType", label: "Event type", visible: false, help: "ATH, ATL, or RECOVER classification of the nearest event." },
         { key: "eventDate", label: "Event date", visible: false, help: "Date of the nearest MSTR projection event." },
-        { key: "impliedBtc", label: "Implied BTC holdings", visible: false, help: "Strategy BTC holdings implied by the projected sats/share level." }
+        { key: "impliedBtc", label: "Implied BTC holdings", visible: false, help: "Strategy BTC holdings implied by the projected sats/share level." },
+        { key: "historicalActual", label: "Historical actual price", visible: false, help: "Shows the exact historical MSTR close if the selected date has a loaded data row." }
+      ],
+      portfolio: [
+        { key: "cursorValue", label: "Cursor value", visible: true, help: "The portfolio chart value under the cursor or frozen popup point." },
+        { key: "portfolioValue", label: "Portfolio value", visible: true, help: "Projected total portfolio value at the selected date." },
+        { key: "separatorTop", label: "Section divider", visible: true, help: "A thin line dividing total value from holdings and price details." },
+        { key: "btcHoldings", label: "BTC holdings", visible: true, help: "Projected BTC holdings at the selected date after DCA purchases." },
+        { key: "mstrShares", label: "MSTR shares", visible: true, help: "Projected MSTR share holdings at the selected date after DCA purchases." },
+        { key: "btcPrice", label: "BTC price", visible: true, help: "Projected BTC price used at the selected date." },
+        { key: "mstrPrice", label: "MSTR price", visible: true, help: "Projected MSTR price used at the selected date." },
+        { key: "btcValue", label: "BTC holdings value", visible: true, help: "Projected dollar value of BTC holdings at the selected date." },
+        { key: "mstrValue", label: "MSTR shares value", visible: true, help: "Projected dollar value of MSTR shares at the selected date." },
+        { key: "totalDcaSpend", label: "Total DCA spend", visible: false, help: "Total projected dollars invested through BTC and MSTR DCA settings up to the selected date." },
+        { key: "btcDcaSpend", label: "BTC DCA spend", visible: false, help: "Projected dollars invested into BTC through DCA up to the selected date." },
+        { key: "mstrDcaSpend", label: "MSTR DCA spend", visible: false, help: "Projected dollars invested into MSTR through DCA up to the selected date." }
       ]
     };
 
     const defaultMetricConfig = {
       btc: metricCatalog.btc.map(item => ({ key: item.key, visible: item.visible })),
-      mstr: metricCatalog.mstr.map(item => ({ key: item.key, visible: item.visible }))
+      mstr: metricCatalog.mstr.map(item => ({ key: item.key, visible: item.visible })),
+      portfolio: metricCatalog.portfolio.map(item => ({ key: item.key, visible: item.visible }))
     };
 
     const defaultPopupConfig = {
-      btc: popupCatalog.btc.map(item => ({ key: item.key, visible: item.visible })),
+      btc: [
+        { key: "separatorTop", visible: true, uid: "btc-divider-date" },
+        { key: "cursorPrice", visible: true },
+        { key: "cycleOverlayValue", visible: true },
+        { key: "band", visible: false },
+        { key: "separatorTop", visible: true, uid: "btc-divider-bands" },
+        { key: "bandPrices", visible: true, options: { expanded: true } },
+        { key: "separatorTop", visible: true, uid: "btc-divider-cycle" },
+        { key: "nearestCycle", visible: true },
+        { key: "btcBase", visible: false },
+        { key: "fairValue", visible: false },
+        { key: "bottomLine", visible: false },
+        { key: "daysSinceGenesis", visible: false },
+        { key: "activeFormula", visible: false },
+        { key: "historicalActual", visible: false }
+      ],
       mstr: [
         { key: "cursorPrice", visible: true },
         { key: "mstrRainbowBand", visible: true },
@@ -7035,6 +7305,7 @@
         { key: "mstrRainbowMode", visible: false },
         { key: "separatorTop", visible: true, uid: "mstr-divider-events" },
         { key: "nearestEvent", visible: true },
+        { key: "cycleOverlayValue", visible: true },
         { key: "mstrPrice", visible: true },
         { key: "btcPrice", visible: true },
         { key: "mnav", visible: true },
@@ -7042,7 +7313,23 @@
         { key: "satsPerShare", visible: true },
         { key: "impliedBtc", visible: true },
         { key: "eventType", visible: false },
-        { key: "eventDate", visible: false }
+        { key: "eventDate", visible: false },
+        { key: "historicalActual", visible: false }
+      ],
+      portfolio: [
+        { key: "cursorValue", visible: true },
+        { key: "portfolioValue", visible: true },
+        { key: "separatorTop", visible: true, uid: "portfolio-divider-holdings" },
+        { key: "btcHoldings", visible: true },
+        { key: "mstrShares", visible: true },
+        { key: "separatorTop", visible: true, uid: "portfolio-divider-prices" },
+        { key: "btcPrice", visible: true },
+        { key: "mstrPrice", visible: true },
+        { key: "btcValue", visible: true },
+        { key: "mstrValue", visible: true },
+        { key: "totalDcaSpend", visible: false },
+        { key: "btcDcaSpend", visible: false },
+        { key: "mstrDcaSpend", visible: false }
       ]
     };
 
@@ -7071,11 +7358,16 @@
       showCsv: $("showCsv"),
       showAthAtl: $("showAthAtl"),
       rainbowOpacity: $("rainbowOpacity"),
+      inflationAdjusted: $("inflationAdjusted"),
+      inflationRate: $("inflationRate"),
+      cycleProjectionMode: $("cycleProjectionMode"),
       atlUsesPreviousAth: $("atlUsesPreviousAth"),
       cycleAnchorDate: $("cycleAnchorDate"),
       cycleLabelMode: $("cycleLabelMode"),
       atlToAthDays: $("atlToAthDays"),
       athToAtlDays: $("athToAtlDays"),
+      halvingAtlOffsetDays: $("halvingAtlOffsetDays"),
+      halvingAthOffsetDays: $("halvingAthOffsetDays"),
       atlBandMultiplier: $("atlBandMultiplier"),
       athBandMultiplier: $("athBandMultiplier"),
       csvInput: $("csvInput"),
@@ -7093,7 +7385,16 @@
       maxBtcHoldings: $("maxBtcHoldings"),
       scarcityBrakePower: $("scarcityBrakePower"),
       mstrRainbowMode: $("mstrRainbowMode"),
-      showMstrFair: $("showMstrFair")
+      showMstrFair: $("showMstrFair"),
+      portfolioBtcHoldings: $("portfolioBtcHoldings"),
+      portfolioMstrShares: $("portfolioMstrShares"),
+      portfolioBtcDcaAmount: $("portfolioBtcDcaAmount"),
+      portfolioBtcDcaFrequency: $("portfolioBtcDcaFrequency"),
+      portfolioBtcDcaStart: $("portfolioBtcDcaStart"),
+      portfolioMstrDcaAmount: $("portfolioMstrDcaAmount"),
+      portfolioMstrDcaFrequency: $("portfolioMstrDcaFrequency"),
+      portfolioMstrDcaStart: $("portfolioMstrDcaStart"),
+      popupPriceFormat: $("popupPriceFormat")
     };
 
     let activeMode = "btc";
@@ -7111,12 +7412,23 @@
     let dragStart = null;
     let hover = null;
     let pinnedHover = false;
+    let pinnedHoverData = null;
     let pointerMoved = false;
     let modelCache = [];
     let cycleCache = [];
     let strategyRows = [];
+    let portfolioRows = [];
     let helpHoverTimer = null;
     let suppressAutoscale = false;
+    let tooltipAnchorMode = false;
+    let tooltipCorner = "bottomRight";
+    let tooltipDrag = null;
+    let deferredChartLabels = [];
+    const activePointers = new Map();
+    let pinchGesture = null;
+
+    const defaultPopupBandDotSettings = { enabled: true, size: 1.5, glowSize: 2.5, glowAlpha: 0.15 };
+    let popupBandDotSettings = { ...defaultPopupBandDotSettings };
 
     const state = {
       startMs: GENESIS.getTime(),
@@ -7130,6 +7442,9 @@
     $("calendarDay").textContent = String(today.getUTCDate());
 
     loadSettings();
+    updateCycleProjectionSettingsVisibility();
+    formatCommaInputs();
+    updateResponsiveMode();
     initializeHistoricalData();
     renderBandsEditor();
     renderMstrBandsEditor();
@@ -7139,16 +7454,18 @@
     recompute();
     applyDefaultView();
 
-    window.addEventListener("resize", () => { resize(); autoY(); draw(); });
+    window.addEventListener("resize", () => { updateResponsiveMode(); resize(); autoY(); ensureMobileHover(true); draw(); });
 
     Object.entries(controls).forEach(([key, el]) => {
-      if (!el || key === "csvInput") return;
+      if (!el || key === "csvInput" || key === "mstrCsvInput") return;
       el.addEventListener("input", () => {
         if (key === "preset") applyPreset(el.value);
         else if (["constantA","exponentN","fairMultiplier","bottomMultiplier"].includes(key)) controls.preset.value = "custom";
+        if (key === "mstrRainbowMode") renderPopupEditor();
+        if (key === "cycleProjectionMode") updateCycleProjectionSettingsVisibility();
         recompute();
       });
-      el.addEventListener("change", recompute);
+      el.addEventListener("change", () => { formatCommaInputs(); recompute(); });
     });
 
     document.querySelectorAll(".mode-tab").forEach(btn => {
@@ -7173,9 +7490,15 @@
     $("jumpToday").addEventListener("click", jumpToToday);
     $("jumpDateBtn").addEventListener("click", () => $("jumpDateInput").showPicker ? $("jumpDateInput").showPicker() : $("jumpDateInput").click());
     $("jumpDateInput").addEventListener("change", () => jumpToDate(parseDate($("jumpDateInput").value)));
+    $("toggleInflation")?.addEventListener("click", () => { controls.inflationAdjusted.checked = !controls.inflationAdjusted.checked; recompute(); });
+    $("toggleTooltipAnchor")?.addEventListener("click", toggleTooltipAnchorMode);
+    tooltip.addEventListener("pointerdown", onTooltipPointerDown);
+    document.addEventListener("pointermove", onTooltipPointerMove);
+    document.addEventListener("pointerup", onTooltipPointerUp);
     $("metricToggle").addEventListener("click", () => app.classList.toggle("metrics-open"));
     $("addDividerBtc")?.addEventListener("click", () => addPopupDivider("btc"));
     $("addDividerMstr")?.addEventListener("click", () => addPopupDivider("mstr"));
+    $("addDividerPortfolio")?.addEventListener("click", () => addPopupDivider("portfolio"));
     $("resetBands").addEventListener("click", () => { bands = cloneBands(defaultBands); renderBandsEditor(); recompute(); });
     $("resetMstrBands")?.addEventListener("click", () => { mstrBands = cloneBands(defaultMstrBands); renderMstrBandsEditor(); recompute(); });
     $("toggleAllBands").addEventListener("click", () => {
@@ -7202,8 +7525,10 @@
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointercancel", onPointerUp);
     canvas.addEventListener("pointerleave", () => {
-      if (window.matchMedia("(pointer: fine)").matches && !pinnedHover) {
+      if (window.matchMedia("(pointer: fine)").matches && !pinnedHover && !tooltipAnchorMode) {
         hover = null;
+        pinnedHover = false;
+        pinnedHoverData = null;
         tooltip.style.display = "none";
         draw();
       }
@@ -7234,9 +7559,14 @@
         showCsv: "Show or hide the loaded historical BTC close line without clearing the data.",
         showAthAtl: "Show projected ATH, ATL, and Recovery cycle points and connecting line.",
         rainbowOpacity: "Adjust the opacity of the colored rainbow valuation bands.",
+        inflationAdjusted: "Show every chart value in today's dollars using the annual inflation rate below.",
+        inflationRate: "Annual inflation percentage used to convert past and future nominal prices into today's dollars. Enter 3 for 3%.",
         atlUsesPreviousAth: "When enabled, future ATL prices use the ATH before the immediately previous ATH instead of the ATL multiplier.",
+        cycleProjectionMode: "Choose Cycle Interval Projection for custom day spacing, or Halving Offset Projection to place ATL/ATH a set number of days before and after each halving.",
         cycleAnchorDate: "The anchor ATL date used to generate forward and backward ATH/ATL/Recovery cycles.",
         cycleLabelMode: "Controls how many ATH/ATL point labels appear on the chart.",
+        halvingAtlOffsetDays: "For Halving Offset Projection, sets each ATL this many days before the halving.",
+        halvingAthOffsetDays: "For Halving Offset Projection, sets each ATH this many days after the halving.",
         atlToAthDays: "Days projected from ATL to ATH.",
         athToAtlDays: "Days projected from ATH back to ATL.",
         atlBandMultiplier: "BTC power-law multiplier used for ATL price when the prior-ATH rule is off.",
@@ -7255,7 +7585,15 @@
         scarcityBrakePower: "Power applied to the scarcity brake. Higher values make yield fade more sharply near the max holdings.",
         mstrRainbowMode: "Choose the MSTR rainbow overlay. mNAV bands use editable mNAV levels. BTC-derived bands convert the BTC rainbow bands into MSTR prices using projected sats/share and projected mNAV.",
         csvInput: "Historical BTC close data in YYYY-MM-DD,close format.",
-        mstrCsvInput: "Historical MSTR close data in YYYY-MM-DD,close format."
+        mstrCsvInput: "Historical MSTR close data in YYYY-MM-DD,close format.",
+        portfolioBtcHoldings: "Current BTC holdings used as the starting point for the portfolio chart.",
+        portfolioMstrShares: "Current MSTR share holdings used as the starting point for the portfolio chart.",
+        portfolioBtcDcaAmount: "Dollar amount used for each BTC DCA purchase.",
+        portfolioBtcDcaFrequency: "How often the BTC DCA amount is invested: daily, weekly, monthly, or off.",
+        portfolioBtcDcaStart: "Date of the first future BTC DCA purchase.",
+        portfolioMstrDcaAmount: "Dollar amount used for each MSTR DCA purchase.",
+        portfolioMstrDcaFrequency: "How often the MSTR DCA amount is invested: daily, weekly, monthly, or off.",
+        portfolioMstrDcaStart: "Date of the first future MSTR DCA purchase."
       };
       Object.entries(helpMap).forEach(([id, text]) => {
         const label = document.querySelector(`label[for="${id}"]`);
@@ -7290,18 +7628,35 @@
       draw();
     }
 
+    function canvasPointFromEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      const cssW = canvas.width / Math.max(1, dpr);
+      const cssH = canvas.height / Math.max(1, dpr);
+      return {
+        x: (e.clientX - rect.left) * (cssW / Math.max(1, rect.width)),
+        y: (e.clientY - rect.top) * (cssH / Math.max(1, rect.height))
+      };
+    }
+
     function onChartClick(e) {
       if (pointerMoved) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const { x, y } = canvasPointFromEvent(e);
       if (x < plot.x || x > plot.x + plot.w || y < plot.y || y > plot.y + plot.h) return;
+      if (isMobilePopupMode()) {
+        hover = { x, y };
+        pinnedHover = true;
+        pinnedHoverData = { t: pxToX(x), yValue: pxToY(y) };
+        draw();
+        return;
+      }
       if (pinnedHover) {
         pinnedHover = false;
+        pinnedHoverData = null;
         hover = { x, y };
       } else {
         pinnedHover = true;
         hover = { x, y };
+        pinnedHoverData = { t: pxToX(x), yValue: pxToY(y) };
       }
       draw();
     }
@@ -7322,15 +7677,98 @@
       activeMode = mode;
       document.querySelectorAll(".mode-tab").forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
       tooltip.style.display = "none";
-      hover = null;
-      pinnedHover = false;
+      if (mode === "portfolio" && state.viewEndMs < today.getTime()) setWindow("25", false);
       autoY();
+      if (pinnedHoverData) {
+        pinnedHover = true;
+        hover = hoverFromPinnedData();
+      } else {
+        hover = null;
+        pinnedHover = false;
+        ensureMobileHover(true);
+      }
       updateMetrics();
       draw();
     }
 
+    function isMobilePopupMode() {
+      return window.innerWidth <= 900 || (window.innerWidth <= 1100 && window.innerHeight > window.innerWidth);
+    }
+
+    function updateResponsiveMode() {
+      app.classList.toggle("mobile-popup-mode", isMobilePopupMode());
+    }
+
+    function queueDeferredLabel(x, y, text, opts = {}) {
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !text) return;
+      deferredChartLabels.push({ x, y, text, color: opts.color || "rgba(255,255,255,.9)", font: opts.font || "12px system-ui, sans-serif", align: opts.align || "center" });
+    }
+
+    function flushDeferredLabels() {
+      if (!deferredChartLabels.length) return;
+      ctx.save();
+      deferredChartLabels.forEach(item => {
+        ctx.font = item.font;
+        ctx.fillStyle = item.color;
+        const tw = ctx.measureText(item.text).width;
+        let drawX = item.x;
+        if (item.align === "center") drawX = Math.min(plot.x + plot.w - tw - 3, Math.max(plot.x + 3, item.x - tw / 2));
+        else if (item.align === "right") drawX = item.x - tw;
+        else drawX = Math.max(plot.x + 3, Math.min(plot.x + plot.w - tw - 3, item.x));
+        const drawY = Math.max(plot.y + 12, Math.min(plot.y + plot.h - 4, item.y));
+        ctx.fillText(item.text, drawX, drawY);
+      });
+      ctx.restore();
+    }
+
+    function defaultHoverPoint() {
+      const t = Math.min(Math.max(today.getTime(), state.viewStartMs), state.viewEndMs);
+      let displayValue = NaN;
+      if (activeMode === "portfolio") {
+        const p = interpolatedPortfolioAt(t);
+        displayValue = p ? chartPrice(p.totalValue, t) : NaN;
+      } else if (activeMode === "mstr") {
+        displayValue = strategyProjectionChartValueAt(t);
+        if (!Number.isFinite(displayValue)) {
+          const row = interpolatedStrategyAt(t);
+          displayValue = row ? chartPrice(row.mstrPrice, t) : NaN;
+        }
+      } else {
+        displayValue = cycleProjectionChartValueAt(t);
+        if (!Number.isFinite(displayValue)) displayValue = chartPrice(btcMarketPriceAt(t), t);
+      }
+      if (!Number.isFinite(displayValue) || displayValue <= 0) displayValue = state.yMin * 1.2;
+      return { x: xToPx(t), y: yToPx(displayValue) };
+    }
+
+    function ensureMobileHover(force = false) {
+      if (!isMobilePopupMode()) return;
+      if (force || !hover) hover = defaultHoverPoint();
+      if (!pinnedHover) pinnedHover = true;
+    }
+
+    function hoverFromPinnedData() {
+      if (!pinnedHoverData) return null;
+      const x = xToPx(pinnedHoverData.t);
+      const y = yToPx(pinnedHoverData.yValue);
+      return {
+        x: Math.max(plot.x, Math.min(plot.x + plot.w, Number.isFinite(x) ? x : plot.x)),
+        y: Math.max(plot.y, Math.min(plot.y + plot.h, Number.isFinite(y) ? y : plot.y + plot.h / 2))
+      };
+    }
+
+    function updateDrawerPosition() {
+      const header = document.querySelector(".header");
+      if (!header) return;
+      const appRect = app.getBoundingClientRect();
+      const headerRect = header.getBoundingClientRect();
+      const top = Math.max(10, Math.round(headerRect.bottom - appRect.top + 10));
+      app.style.setProperty("--drawer-top", `${top}px`);
+    }
+
     function openDrawer(which) {
       closeDrawers(false);
+      updateDrawerPosition();
       if (which === "settings") {
         $("settingsPanel").classList.add("open");
         app.classList.add("settings-open");
@@ -7353,6 +7791,15 @@
     function setSettingsPanel(name) {
       document.querySelectorAll(".settings-tab").forEach(tab => tab.classList.toggle("active", tab.dataset.panel === name));
       document.querySelectorAll("[data-panel-content]").forEach(panel => panel.classList.toggle("active", panel.dataset.panelContent === name));
+    }
+
+
+    function updateCycleProjectionSettingsVisibility() {
+      const mode = controls.cycleProjectionMode?.value || "interval";
+      const interval = $("cycleIntervalSettings");
+      const halving = $("halvingOffsetSettings");
+      if (interval) interval.style.display = mode === "interval" ? "block" : "none";
+      if (halving) halving.style.display = mode === "halvingOffset" ? "block" : "none";
     }
 
     function bindHelpButtons(root) {
@@ -7388,14 +7835,32 @@
       $("helpPopover").classList.remove("open");
     }
 
+    function settingNumber(value, fallback = 0) {
+      const n = Number(String(value ?? "").replace(/,/g, ""));
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function formatInputCommas(el) {
+      if (!el) return;
+      const raw = String(el.value || "").replace(/,/g, "").trim();
+      if (!raw || !/^[-+]?\d+(\.\d+)?$/.test(raw)) return;
+      const parts = raw.split(".");
+      parts[0] = Number(parts[0]).toLocaleString();
+      el.value = parts.length > 1 ? `${parts[0]}.${parts[1]}` : parts[0];
+    }
+
+    function formatCommaInputs() {
+      [controls.startBps, controls.startBtcHoldings, controls.scarcityStart, controls.maxBtcHoldings, controls.portfolioBtcHoldings, controls.portfolioMstrShares, controls.portfolioBtcDcaAmount, controls.portfolioMstrDcaAmount].forEach(formatInputCommas);
+    }
+
     function getSettings() {
-      const fair = Number(controls.fairMultiplier.value);
+      const fair = settingNumber(controls.fairMultiplier.value, 1);
       return {
-        A: Number(controls.constantA.value),
-        n: Number(controls.exponentN.value),
+        A: settingNumber(controls.constantA.value),
+        n: settingNumber(controls.exponentN.value),
         fair,
-        bottom: Number(controls.bottomMultiplier.value),
-        yearsAhead: Number(controls.yearsAhead.value),
+        bottom: settingNumber(controls.bottomMultiplier.value),
+        yearsAhead: settingNumber(controls.yearsAhead.value),
         linearScale: controls.priceScale.value === "linear",
         showBase: controls.showBase.checked,
         showFair: controls.showFair.checked && Math.abs(fair - 1) > 1e-9,
@@ -7403,33 +7868,51 @@
         showHalvings: controls.showHalvings.checked,
         showCsv: controls.showCsv.checked,
         showAthAtl: controls.showAthAtl.checked,
-        rainbowOpacity: Number(controls.rainbowOpacity.value) / 100,
+        rainbowOpacity: settingNumber(controls.rainbowOpacity.value) / 100,
+        inflationAdjusted: !!controls.inflationAdjusted?.checked,
+        inflationRate: Math.max(0, (settingNumber(controls.inflationRate?.value, 3) || 0) / 100),
         atlUsesPreviousAth: controls.atlUsesPreviousAth.checked,
+        cycleProjectionMode: controls.cycleProjectionMode?.value || "interval",
         cycleAnchorDate: controls.cycleAnchorDate.value || "2026-10-05",
         cycleLabelMode: controls.cycleLabelMode.value,
-        atlToAthDays: Math.max(1, Number(controls.atlToAthDays.value) || 1064),
-        athToAtlDays: Math.max(1, Number(controls.athToAtlDays.value) || 364),
-        atlBandMultiplier: Math.max(0.01, Number(controls.atlBandMultiplier.value) || 0.42),
-        athBandMultiplier: Math.max(0.01, Number(controls.athBandMultiplier.value) || 1.45)
+        atlToAthDays: Math.max(1, settingNumber(controls.atlToAthDays.value, 1064) || 1064),
+        athToAtlDays: Math.max(1, settingNumber(controls.athToAtlDays.value, 364) || 364),
+        halvingAtlOffsetDays: Math.max(1, settingNumber(controls.halvingAtlOffsetDays?.value, 500) || 500),
+        halvingAthOffsetDays: Math.max(1, settingNumber(controls.halvingAthOffsetDays?.value, 500) || 500),
+        atlBandMultiplier: Math.max(0.01, settingNumber(controls.atlBandMultiplier.value, 0.38) || 0.38),
+        athBandMultiplier: Math.max(0.01, settingNumber(controls.athBandMultiplier.value, 1.45) || 1.45)
       };
     }
 
     function getStrategySettings() {
       return {
-        baseMnav: Number(controls.mnavBase.value) || 0.75,
-        maxMnav: Number(controls.mnavMax.value) || 1.65,
-        bpsMnavCap: Number(controls.mnavCap.value) || 1.65,
-        startBps: Number(controls.startBps.value) || 218046,
-        terminalYield: Number(controls.terminalYield.value) || 0.02,
-        scarcityFadePower: Number(controls.scarcityFadePower.value) || 0.25,
-        bullRampPower: Number(controls.bullRampPower.value) || 2,
-        bearCrashPower: Number(controls.bearCrashPower.value) || 1,
-        startBtcHoldings: Number(controls.startBtcHoldings.value) || 883000,
-        scarcityStart: Number(controls.scarcityStart.value) || 1500000,
-        maxBtcHoldings: Number(controls.maxBtcHoldings.value) || 2000000,
-        scarcityBrakePower: Number(controls.scarcityBrakePower.value) || 100,
+        baseMnav: settingNumber(controls.mnavBase.value, 0.65) || 0.65,
+        maxMnav: settingNumber(controls.mnavMax.value, 1.65) || 1.65,
+        bpsMnavCap: settingNumber(controls.mnavCap.value, 1.65) || 1.65,
+        startBps: settingNumber(controls.startBps.value, 218046) || 218046,
+        terminalYield: settingNumber(controls.terminalYield.value, 0.02) || 0.02,
+        scarcityFadePower: settingNumber(controls.scarcityFadePower.value, 0.25) || 0.25,
+        bullRampPower: settingNumber(controls.bullRampPower.value, 2) || 2,
+        bearCrashPower: settingNumber(controls.bearCrashPower.value, 1) || 1,
+        startBtcHoldings: settingNumber(controls.startBtcHoldings.value, 883000) || 883000,
+        scarcityStart: settingNumber(controls.scarcityStart.value, 1500000) || 1500000,
+        maxBtcHoldings: settingNumber(controls.maxBtcHoldings.value, 2000000) || 2000000,
+        scarcityBrakePower: settingNumber(controls.scarcityBrakePower.value, 100) || 100,
         rainbowMode: controls.mstrRainbowMode?.value || "mnav",
         showFair: controls.showMstrFair ? controls.showMstrFair.checked : true
+      };
+    }
+
+    function getPortfolioSettings() {
+      return {
+        btcHoldings: Math.max(0, settingNumber(controls.portfolioBtcHoldings?.value, 1) || 0),
+        mstrShares: Math.max(0, settingNumber(controls.portfolioMstrShares?.value, 0) || 0),
+        btcDcaAmount: Math.max(0, settingNumber(controls.portfolioBtcDcaAmount?.value, 0) || 0),
+        btcDcaFrequency: controls.portfolioBtcDcaFrequency?.value || "none",
+        btcDcaStart: controls.portfolioBtcDcaStart?.value || isoDate(today),
+        mstrDcaAmount: Math.max(0, settingNumber(controls.portfolioMstrDcaAmount?.value, 0) || 0),
+        mstrDcaFrequency: controls.portfolioMstrDcaFrequency?.value || "none",
+        mstrDcaStart: controls.portfolioMstrDcaStart?.value || isoDate(today)
       };
     }
 
@@ -7438,6 +7921,7 @@
       $("yearsAheadLabel").textContent = s.yearsAhead;
       $("rainbowOpacityLabel").textContent = controls.rainbowOpacity.value;
       updateFormulaDisplay();
+      updateInflationButtonState();
       updateFairLineState();
       updateAtlBandState();
       state.endMs = addYears(today, s.yearsAhead).getTime();
@@ -7448,6 +7932,7 @@
       buildModelCache();
       buildCycleCache();
       buildStrategyRows();
+      buildPortfolioRows();
       if (!suppressAutoscale) autoY();
       updateMetrics();
       draw();
@@ -7460,6 +7945,16 @@
         $("formulaDisplay").textContent = preset.formula;
       } else {
         $("formulaDisplay").textContent = `price = ${controls.constantA.value} × days^${controls.exponentN.value}`;
+      }
+    }
+
+
+    function updateInflationButtonState() {
+      const on = !!controls.inflationAdjusted?.checked;
+      const btn = $("toggleInflation");
+      if (btn) {
+        btn.classList.toggle("active", on);
+        btn.title = on ? "Inflation adjustment on" : "Inflation adjustment off";
       }
     }
 
@@ -7499,38 +7994,48 @@
 
     function buildCycleCache() {
       const s = getSettings();
-      const anchor = parseDate(s.cycleAnchorDate) || new Date(Date.UTC(2026, 9, 5));
-      const anchorT = anchor.getTime();
-      const cycleSpan = (s.atlToAthDays + s.athToAtlDays) * DAY;
       const firstT = state.startMs;
       const lastT = state.endMs + 2 * 365 * DAY;
       const cycles = [];
 
-      let idx = 0;
-      for (let atlT = anchorT; atlT <= lastT && idx < 90; atlT += cycleSpan, idx++) {
-        const athT = atlT + s.atlToAthDays * DAY;
-        const athPrice = powerPrice(daysSinceGenesis(athT)) * s.athBandMultiplier;
-        let atlPrice;
-        if (s.atlUsesPreviousAth && idx >= 1) {
-          const priorPriorAth = cycles[idx - 2]?.athPrice;
-          atlPrice = Number.isFinite(priorPriorAth) ? priorPriorAth : powerPrice(daysSinceGenesis(atlT)) * s.atlBandMultiplier;
-        } else {
-          atlPrice = powerPrice(daysSinceGenesis(atlT)) * s.atlBandMultiplier;
+      if (s.cycleProjectionMode === "halvingOffset") {
+        let idx = 0;
+        for (let h = FIRST_HALVING.getTime() - HALVING_INTERVAL_DAYS * DAY; h <= lastT + s.halvingAthOffsetDays * DAY; h += HALVING_INTERVAL_DAYS * DAY, idx++) {
+          const atlT = h - s.halvingAtlOffsetDays * DAY;
+          const athT = h + s.halvingAthOffsetDays * DAY;
+          const atlPrice = powerPrice(daysSinceGenesis(atlT)) * s.atlBandMultiplier;
+          const athPrice = powerPrice(daysSinceGenesis(athT)) * s.athBandMultiplier;
+          cycles.push({ idx, atlT, athT, atlPrice, athPrice });
         }
-        cycles.push({ idx, atlT, athT, atlPrice, athPrice });
-      }
+      } else {
+        const anchor = parseDate(s.cycleAnchorDate) || new Date(Date.UTC(2026, 9, 5));
+        const anchorT = anchor.getTime();
+        const cycleSpan = (s.atlToAthDays + s.athToAtlDays) * DAY;
+        let idx = 0;
+        for (let atlT = anchorT; atlT <= lastT && idx < 90; atlT += cycleSpan, idx++) {
+          const athT = atlT + s.atlToAthDays * DAY;
+          const athPrice = powerPrice(daysSinceGenesis(athT)) * s.athBandMultiplier;
+          let atlPrice;
+          if (s.atlUsesPreviousAth && idx >= 1) {
+            const priorPriorAth = cycles[idx - 2]?.athPrice;
+            atlPrice = Number.isFinite(priorPriorAth) ? priorPriorAth : powerPrice(daysSinceGenesis(atlT)) * s.atlBandMultiplier;
+          } else {
+            atlPrice = powerPrice(daysSinceGenesis(atlT)) * s.atlBandMultiplier;
+          }
+          cycles.push({ idx, atlT, athT, atlPrice, athPrice });
+        }
 
-      let backIdx = -1;
-      for (let athT = anchorT - s.athToAtlDays * DAY; athT >= firstT - cycleSpan && backIdx > -90; athT -= cycleSpan, backIdx--) {
-        const atlT = athT - s.atlToAthDays * DAY;
-        const atlPrice = powerPrice(daysSinceGenesis(atlT)) * s.atlBandMultiplier;
-        const athPrice = powerPrice(daysSinceGenesis(athT)) * s.athBandMultiplier;
-        cycles.unshift({ idx: backIdx, atlT, athT, atlPrice, athPrice });
+        let backIdx = -1;
+        for (let athT = anchorT - s.athToAtlDays * DAY; athT >= firstT - cycleSpan && backIdx > -90; athT -= cycleSpan, backIdx--) {
+          const atlT = athT - s.atlToAthDays * DAY;
+          const atlPrice = powerPrice(daysSinceGenesis(atlT)) * s.atlBandMultiplier;
+          const athPrice = powerPrice(daysSinceGenesis(athT)) * s.athBandMultiplier;
+          cycles.unshift({ idx: backIdx, atlT, athT, atlPrice, athPrice });
+        }
       }
 
       cycleCache = [];
-      cycles.sort((a, b) => a.atlT - b.atlT).forEach((cy, order, arr) => {
-        const prevAth = arr[order - 1];
+      cycles.sort((a, b) => a.atlT - b.atlT).forEach((cy) => {
         if (cy.atlT >= firstT && cy.atlT <= lastT && Number.isFinite(cy.atlPrice)) {
           cycleCache.push({ type: "ATL", t: cy.atlT, price: cy.atlPrice, cycle: cy.idx });
         }
@@ -7616,19 +8121,23 @@
     }
 
     function resize() {
+      updateResponsiveMode();
+      updateDrawerPosition();
       const rect = chartCard.getBoundingClientRect();
       dpr = window.devicePixelRatio || 1;
       canvas.width = Math.max(320, Math.floor(rect.width * dpr));
       canvas.height = Math.max(240, Math.floor(rect.height * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const mobileMode = isMobilePopupMode();
       padding = rect.width < 700
-        ? { left: 60, right: 18, top: 24, bottom: 54 }
-        : { left: 78, right: 28, top: 28, bottom: 58 };
+        ? { left: 60, right: 18, top: 24, bottom: mobileMode ? 30 : 54 }
+        : { left: 78, right: 28, top: 28, bottom: mobileMode ? 34 : 58 };
+      const availableHeight = mobileMode ? rect.height * 0.5 : rect.height;
       plot = {
         x: padding.left,
         y: padding.top,
         w: Math.max(10, rect.width - padding.left - padding.right),
-        h: Math.max(10, rect.height - padding.top - padding.bottom)
+        h: Math.max(10, availableHeight - padding.top - padding.bottom)
       };
     }
 
@@ -7636,16 +8145,26 @@
       const s = getSettings();
       let min = Infinity;
       let max = -Infinity;
-      if (activeMode === "mstr") {
+      if (activeMode === "portfolio") {
+        portfolioRows.forEach(p => {
+          if (p.t < state.viewStartMs || p.t > state.viewEndMs) return;
+          [p.totalValue, p.btcValue, p.mstrValue].forEach(v => {
+            const d = chartPrice(v, p.t);
+            if (Number.isFinite(d) && d > 0) { min = Math.min(min, d); max = Math.max(max, d); }
+          });
+        });
+      } else if (activeMode === "mstr") {
         strategyRows.forEach(p => {
           if (p.t < state.viewStartMs || p.t > state.viewEndMs) return;
-          min = Math.min(min, p.mstrPrice);
-          max = Math.max(max, p.mstrPrice);
+          const displayMstr = chartPrice(p.mstrPrice, p.t);
+          min = Math.min(min, displayMstr);
+          max = Math.max(max, displayMstr);
           if (getStrategySettings().showFair) {
             const fairMstr = p.btcPrice * (p.satsPerShare / 100000000);
             if (Number.isFinite(fairMstr) && fairMstr > 0) {
-              min = Math.min(min, fairMstr);
-              max = Math.max(max, fairMstr);
+              const displayFairMstr = chartPrice(fairMstr, p.t);
+              min = Math.min(min, displayFairMstr);
+              max = Math.max(max, displayFairMstr);
             }
           }
         });
@@ -7657,16 +8176,19 @@
             samples.forEach(t => {
               const lo = mstrRainbowPriceAt(t, b, "lower", ssForRainbow.rainbowMode);
               const up = mstrRainbowPriceAt(t, b, "upper", ssForRainbow.rainbowMode);
-              if (Number.isFinite(lo) && lo > 0) min = Math.min(min, lo), max = Math.max(max, lo);
-              if (Number.isFinite(up) && up > 0) min = Math.min(min, up), max = Math.max(max, up);
+              const dlo = chartPrice(lo, t);
+              const dup = chartPrice(up, t);
+              if (Number.isFinite(dlo) && dlo > 0) min = Math.min(min, dlo), max = Math.max(max, dlo);
+              if (Number.isFinite(dup) && dup > 0) min = Math.min(min, dup), max = Math.max(max, dup);
             });
           });
         }
         if (s.showCsv) {
           mstrImported.forEach(p => {
             if (p.t >= state.viewStartMs && p.t <= state.viewEndMs && p.price > PRICE_MIN) {
-              min = Math.min(min, p.price);
-              max = Math.max(max, p.price);
+              const displayPrice = chartPrice(p.price, p.t);
+              min = Math.min(min, displayPrice);
+              max = Math.max(max, displayPrice);
             }
           });
         }
@@ -7674,34 +8196,38 @@
         const visibleBands = bands.filter(b => b.visible);
         modelCache.forEach(p => {
           if (p.t < state.viewStartMs || p.t > state.viewEndMs) return;
-          if (s.showBase) { min = Math.min(min, p.base); max = Math.max(max, p.base); }
-          if (s.showFair) { min = Math.min(min, p.base * s.fair); max = Math.max(max, p.base * s.fair); }
-          if (s.showBottom) { min = Math.min(min, p.base * s.bottom); max = Math.max(max, p.base * s.bottom); }
+          if (s.showBase) { const v = chartPrice(p.base, p.t); min = Math.min(min, v); max = Math.max(max, v); }
+          if (s.showFair) { const v = chartPrice(p.base * s.fair, p.t); min = Math.min(min, v); max = Math.max(max, v); }
+          if (s.showBottom) { const v = chartPrice(p.base * s.bottom, p.t); min = Math.min(min, v); max = Math.max(max, v); }
           visibleBands.forEach(b => {
-            min = Math.min(min, p.base * b.lower);
-            max = Math.max(max, p.base * b.upper);
+            const vlo = chartPrice(p.base * b.lower, p.t);
+            const vup = chartPrice(p.base * b.upper, p.t);
+            min = Math.min(min, vlo);
+            max = Math.max(max, vup);
           });
         });
         if (s.showCsv) {
           imported.forEach(p => {
             if (p.t >= state.viewStartMs && p.t <= state.viewEndMs && p.price > 1) {
-              min = Math.min(min, p.price);
-              max = Math.max(max, p.price);
+              const displayPrice = chartPrice(p.price, p.t);
+              min = Math.min(min, displayPrice);
+              max = Math.max(max, displayPrice);
             }
           });
         }
         if (s.showAthAtl) {
           cycleCache.forEach(p => {
             if (p.t >= state.viewStartMs && p.t <= state.viewEndMs) {
-              min = Math.min(min, p.price);
-              max = Math.max(max, p.price);
+              const displayPrice = chartPrice(p.price, p.t);
+              min = Math.min(min, displayPrice);
+              max = Math.max(max, displayPrice);
             }
           });
         }
       }
       if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= min) {
-        min = activeMode === "mstr" ? 100 : PRICE_MIN;
-        max = activeMode === "mstr" ? 10000 : 1000000;
+        min = activeMode === "mstr" ? 100 : activeMode === "portfolio" ? 1000 : PRICE_MIN;
+        max = activeMode === "mstr" ? 10000 : activeMode === "portfolio" ? 1000000 : 1000000;
       }
       if (s.linearScale) {
         const pad = Math.max(1, (max - min) * 0.14);
@@ -7717,7 +8243,9 @@
     }
 
     function draw() {
+      if (pinnedHoverData) hover = hoverFromPinnedData();
       const rect = canvas.getBoundingClientRect();
+      deferredChartLabels = [];
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -7725,13 +8253,16 @@
       drawGrid();
       ctx.save();
       ctx.beginPath();
-      ctx.rect(plot.x, plot.y, plot.w, Math.max(1, plot.h - 3));
+      ctx.rect(plot.x, plot.y, plot.w, Math.max(1, plot.h));
       ctx.clip();
       if (activeMode === "mstr") drawStrategyChart();
+      else if (activeMode === "portfolio") drawPortfolioChart();
       else drawBtcChart();
       ctx.restore();
       drawAxes();
+      if (isMobilePopupMode() && !hover) ensureMobileHover();
       if (hover) drawHover();
+      flushDeferredLabels();
     }
 
     function drawBackground(rect) {
@@ -7775,15 +8306,23 @@
       drawTodayLine();
     }
 
+    function btcModelSamples() {
+      const set = new Set([state.viewStartMs, state.viewEndMs]);
+      modelCache.forEach(p => {
+        if (p.t >= state.viewStartMs && p.t <= state.viewEndMs) set.add(p.t);
+      });
+      return [...set].sort((a, b) => a - b).map(t => ({ t, base: powerPrice(daysSinceGenesis(t)) })).filter(p => Number.isFinite(p.base));
+    }
+
     function drawBands() {
       const s = getSettings();
+      const samples = btcModelSamples();
       bands.filter(b => b.visible).forEach(b => {
         const upper = [];
         const lower = [];
-        modelCache.forEach(p => {
-          if (p.t < state.viewStartMs || p.t > state.viewEndMs) return;
-          upper.push([xToPx(p.t), yToPx(p.base * b.upper)]);
-          lower.push([xToPx(p.t), yToPx(p.base * b.lower)]);
+        samples.forEach(p => {
+          upper.push([xToPx(p.t), yToPxData(p.base * b.upper, p.t)]);
+          lower.push([xToPx(p.t), yToPxData(p.base * b.lower, p.t)]);
         });
         if (upper.length < 2) return;
         ctx.save();
@@ -7805,6 +8344,7 @@
     }
 
     function drawModelLine(multiplier, color, width, name, dash) {
+      const samples = btcModelSamples();
       ctx.save();
       ctx.strokeStyle = color;
       ctx.lineWidth = width;
@@ -7813,10 +8353,9 @@
       ctx.shadowBlur = name === "base" ? 10 : 0;
       ctx.beginPath();
       let started = false;
-      modelCache.forEach(p => {
-        if (p.t < state.viewStartMs || p.t > state.viewEndMs) return;
+      samples.forEach(p => {
         const x = xToPx(p.t);
-        const y = yToPx(p.base * multiplier);
+        const y = yToPxData(p.base * multiplier, p.t);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         if (!started) { ctx.moveTo(x, y); started = true; }
         else ctx.lineTo(x, y);
@@ -7826,22 +8365,35 @@
     }
 
     function drawHistoricalLine(source = imported, color = "rgba(125,247,255,.88)") {
-      const points = (source || [])
-        .filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs && p.price > PRICE_MIN)
-        .sort((a, b) => a.t - b.t);
+      const sorted = (source || []).filter(p => p.price > PRICE_MIN).sort((a, b) => a.t - b.t);
+      if (sorted.length < 2) return;
+      const visible = sorted.filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs);
+      const before = [...sorted].reverse().find(p => p.t < state.viewStartMs);
+      const after = sorted.find(p => p.t > state.viewEndMs);
+      const edgePoint = (a, b, t) => {
+        if (!a || !b || b.t === a.t) return null;
+        const f = (t - a.t) / (b.t - a.t);
+        if (f < 0 || f > 1) return null;
+        return { t, price: a.price + (b.price - a.price) * f };
+      };
+      const firstVisible = visible[0] || after;
+      const lastVisible = visible[visible.length - 1] || before;
+      const startEdge = edgePoint(before, firstVisible, state.viewStartMs) || before;
+      const endEdge = edgePoint(lastVisible, after, state.viewEndMs) || after;
+      const points = [startEdge, ...visible, endEdge].filter(Boolean).sort((a, b) => a.t - b.t);
       if (points.length < 2) return;
       const step = Math.max(1, Math.floor(points.length / Math.max(450, plot.w)));
       ctx.save();
       ctx.strokeStyle = color;
       ctx.lineWidth = 2.0;
-      ctx.shadowColor = color.replace(/rgba?\(([^)]+)\)/, "rgba($1)");
+      ctx.shadowColor = color;
       ctx.shadowBlur = 8;
       ctx.beginPath();
       let started = false;
       points.forEach((p, i) => {
-        if (i % step !== 0 && i !== points.length - 1) return;
+        if (i !== 0 && i !== points.length - 1 && i % step !== 0) return;
         const x = xToPx(p.t);
-        const y = yToPx(p.price);
+        const y = yToPxData(p.price, p.t);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         if (!started) { ctx.moveTo(x, y); started = true; }
         else ctx.lineTo(x, y);
@@ -7898,11 +8450,9 @@
 
     function drawAthAtlOverlay() {
       const s = getSettings();
-      const visible = cycleCache.filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs);
-      const before = [...cycleCache].reverse().find(p => p.t < state.viewStartMs);
-      const after = cycleCache.find(p => p.t > state.viewEndMs);
-      const points = [before, ...visible, after].filter(Boolean);
-      if (points.length < 2) return;
+      const linePoints = cycleLinePointsForView();
+      if (linePoints.length < 2) return;
+      const dotPoints = cycleCache.filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs);
       const highlighted = hover ? nearestCyclePoint(pxToX(hover.x)) : null;
 
       ctx.save();
@@ -7912,9 +8462,9 @@
       ctx.shadowBlur = 10;
       ctx.beginPath();
       let started = false;
-      points.forEach(p => {
+      linePoints.forEach(p => {
         const x = xToPx(p.t);
-        const y = yToPx(p.price);
+        const y = yToPxData(p.price, p.t);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         if (!started) { ctx.moveTo(x, y); started = true; }
         else ctx.lineTo(x, y);
@@ -7922,33 +8472,34 @@
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      points.forEach(p => {
+      dotPoints.forEach(p => {
         const x = xToPx(p.t);
-        const y = yToPx(p.price);
+        const y = yToPxData(p.price, p.t);
         if (x < plot.x || x > plot.x + plot.w || y < plot.y || y > plot.y + plot.h) return;
         const isAth = p.type === "ATH";
         const isRecover = p.type === "RECOVER";
         const isHighlighted = highlighted && highlighted.t === p.t && highlighted.type === p.type;
-        const r = isAth ? 6 : isRecover ? 4 : 5;
+        const r = isAth ? 5.7 : isRecover ? 3.9 : 5.0;
+        const typeColor = isAth ? "#ffcf5a" : isRecover ? "#9aa3b2" : "#58d0ff";
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = isAth ? "#ffcf5a" : isRecover ? "#9aa3b2" : "#58d0ff";
+        ctx.fillStyle = typeColor;
+        ctx.shadowColor = typeColor;
+        ctx.shadowBlur = isRecover ? 8 : 11;
         ctx.fill();
-        ctx.lineWidth = isHighlighted ? 3.2 : 2;
-        ctx.strokeStyle = isHighlighted ? "rgba(255,255,255,.98)" : "rgba(0,0,0,.65)";
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = isHighlighted ? 3.1 : 1.5;
+        ctx.strokeStyle = isHighlighted ? "rgba(255,255,255,.98)" : "rgba(5,7,13,.82)";
         ctx.stroke();
         const labelAllowed = s.cycleLabelMode === "all" || (s.cycleLabelMode === "key" && p.t >= today.getTime() && p.type !== "RECOVER");
         if (labelAllowed && s.cycleLabelMode !== "none") {
-          const label = formatMoney(p.price, true);
-          ctx.font = "12px system-ui, sans-serif";
-          ctx.fillStyle = "rgba(255,255,255,.9)";
-          const tw = ctx.measureText(label).width;
-          const lx = Math.min(plot.x + plot.w - tw - 3, Math.max(plot.x + 3, x - tw / 2));
-          ctx.fillText(label, lx, y + (isAth ? -11 : 20));
+          const label = formatMoney(chartPrice(p.price, p.t), true);
+          queueDeferredLabel(x, y + (isAth ? -11 : 20), label, { color: "rgba(255,255,255,.9)", align: "center" });
         }
       });
       ctx.restore();
     }
+
 
     function drawMstrRainbow() {
       const ss = getStrategySettings();
@@ -7966,8 +8517,8 @@
           const up = mstrRainbowPriceAt(t, b, "upper", ss.rainbowMode);
           const lo = mstrRainbowPriceAt(t, b, "lower", ss.rainbowMode);
           if (!Number.isFinite(up) || !Number.isFinite(lo) || up <= 0 || lo <= 0) return;
-          upper.push([xToPx(t), yToPx(up)]);
-          lower.push([xToPx(t), yToPx(lo)]);
+          upper.push([xToPx(t), yToPxData(up, t)]);
+          lower.push([xToPx(t), yToPxData(lo, t)]);
         });
         if (upper.length < 2 || lower.length < 2) return;
         ctx.save();
@@ -8033,7 +8584,9 @@
       const rows = activeBands.map(b => {
         const lo = mstrRainbowPriceAt(t, b, "lower", ss.rainbowMode);
         const up = mstrRainbowPriceAt(t, b, "upper", ss.rainbowMode);
-        return { band: b, lower: Math.min(lo, up), upper: Math.max(lo, up) };
+        const dlo = chartPrice(lo, t);
+        const dup = chartPrice(up, t);
+        return { band: b, lower: Math.min(dlo, dup), upper: Math.max(dlo, dup) };
       }).filter(r => Number.isFinite(r.lower) && Number.isFinite(r.upper) && r.upper > 0);
       const current = rows.find(r => yVal >= r.lower && yVal <= r.upper);
       return { mode: ss.rainbowMode, rows, current };
@@ -8042,18 +8595,20 @@
     function drawMstrFairLine() {
       const ss = getStrategySettings();
       if (!ss.showFair || !strategyRows.length) return;
-      const points = strategyRows.filter(p => p.t >= state.viewStartMs - 365 * DAY && p.t <= state.viewEndMs + 365 * DAY);
-      if (points.length < 2) return;
+      const samples = mstrRainbowSamples();
+      if (samples.length < 2) return;
       ctx.save();
       ctx.strokeStyle = "#77e7a8";
       ctx.lineWidth = 2.0;
       ctx.setLineDash([7, 7]);
       ctx.beginPath();
       let started = false;
-      points.forEach(p => {
-        const fairMstr = p.btcPrice * (p.satsPerShare / 100000000);
-        const x = xToPx(p.t);
-        const y = yToPx(fairMstr);
+      samples.forEach(t => {
+        const st = interpolatedStrategyAt(t);
+        if (!st) return;
+        const fairMstr = st.btcPrice * (st.satsPerShare / 100000000);
+        const x = xToPx(t);
+        const y = yToPxData(fairMstr, t);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
         if (!started) { ctx.moveTo(x, y); started = true; }
         else ctx.lineTo(x, y);
@@ -8069,8 +8624,9 @@
       if (s.showHalvings) drawHalvings();
       drawTodayLine();
       if (s.showCsv) drawHistoricalLine(mstrImported, "rgba(125,247,255,.88)");
-      const points = strategyRows.filter(p => p.t >= state.viewStartMs - 365 * DAY && p.t <= state.viewEndMs + 365 * DAY);
-      if (points.length < 2) return;
+      const linePoints = strategyLinePointsForView();
+      const dotPoints = strategyRows.filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs);
+      if (linePoints.length < 2) return;
       const highlighted = hover ? nearestStrategyPoint(pxToX(hover.x)) : null;
       ctx.save();
       ctx.lineWidth = 2.7;
@@ -8078,38 +8634,282 @@
       ctx.shadowColor = "rgba(255,255,255,.20)";
       ctx.shadowBlur = 10;
       ctx.beginPath();
-      points.forEach((p, i) => {
+      let started = false;
+      linePoints.forEach(p => {
         const x = xToPx(p.t);
-        const y = yToPx(p.mstrPrice);
+        const y = yToPxData(p.mstrPrice, p.t);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-        if (i === 0) ctx.moveTo(x, y);
+        if (!started) { ctx.moveTo(x, y); started = true; }
         else ctx.lineTo(x, y);
       });
       ctx.stroke();
       ctx.shadowBlur = 0;
-      points.forEach(p => {
+      dotPoints.forEach(p => {
         const x = xToPx(p.t);
-        const y = yToPx(p.mstrPrice);
+        const y = yToPxData(p.mstrPrice, p.t);
         if (x < plot.x || x > plot.x + plot.w || y < plot.y || y > plot.y + plot.h) return;
         const isAth = p.type === "ATH";
         const isRecover = p.type === "RECOVER";
         const isHighlighted = highlighted && highlighted.t === p.t && highlighted.type === p.type;
-        const r = isAth ? 6 : isRecover ? 4 : 5;
+        const r = isAth ? 5.7 : isRecover ? 3.9 : 5.0;
+        const typeColor = isAth ? "#ffcf5a" : isRecover ? "#9aa3b2" : "#58d0ff";
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fillStyle = isAth ? "#ffcf5a" : isRecover ? "#9aa3b2" : "#58d0ff";
+        ctx.fillStyle = typeColor;
+        ctx.shadowColor = typeColor;
+        ctx.shadowBlur = isRecover ? 8 : 11;
         ctx.fill();
-        ctx.lineWidth = isHighlighted ? 3.2 : 2;
-        ctx.strokeStyle = isHighlighted ? "rgba(255,255,255,.98)" : "rgba(0,0,0,.68)";
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = isHighlighted ? 3.1 : 1.5;
+        ctx.strokeStyle = isHighlighted ? "rgba(255,255,255,.98)" : "rgba(5,7,13,.82)";
         ctx.stroke();
         if (p.t >= today.getTime() && p.type !== "RECOVER") {
-          const label = formatMoney(p.mstrPrice, true);
-          ctx.font = "12px system-ui, sans-serif";
-          ctx.fillStyle = "rgba(255,255,255,.90)";
-          ctx.fillText(label, x + 8, y + (isAth ? -10 : 18));
+          const label = formatMoney(chartPrice(p.mstrPrice, p.t), true);
+          queueDeferredLabel(x + 8, y + (isAth ? -10 : 18), label, { color: "rgba(255,255,255,.90)", align: "left" });
         }
       });
       ctx.restore();
+    }
+
+    function interpolatedSeriesValueAt(source, t, key = "price") {
+      const rows = (source || []).slice().sort((a, b) => a.t - b.t);
+      if (!rows.length) return NaN;
+      if (t <= rows[0].t) return Number(rows[0][key]);
+      const last = rows[rows.length - 1];
+      if (t >= last.t) return Number(last[key]);
+      for (let i = 1; i < rows.length; i++) {
+        const a = rows[i - 1], b = rows[i];
+        if (t <= b.t) {
+          const f = Math.max(0, Math.min(1, (t - a.t) / Math.max(1, b.t - a.t)));
+          return Number(a[key]) + (Number(b[key]) - Number(a[key])) * f;
+        }
+      }
+      return Number(last[key]);
+    }
+
+    function rawCycleProjectionPriceAt(t) {
+      if (!cycleCache.length) return NaN;
+      const rows = cycleCache.slice().sort((a, b) => a.t - b.t);
+      if (t <= rows[0].t) return rows[0].price;
+      const last = rows[rows.length - 1];
+      if (t >= last.t) return last.price;
+      for (let i = 1; i < rows.length; i++) {
+        const a = rows[i - 1];
+        const b = rows[i];
+        if (t <= b.t) {
+          const f = Math.max(0, Math.min(1, (t - a.t) / Math.max(1, b.t - a.t)));
+          return a.price + (b.price - a.price) * f;
+        }
+      }
+      return last.price;
+    }
+
+    function cycleProjectionNominalPriceAt(t) {
+      // The BTC ATH/ATL projection is visually a straight line between cycle dots.
+      // On a log chart, the value along that visible straight line is geometric/log-linear,
+      // not ordinary linear price interpolation. Use the same visual-line value that the
+      // BTC popup reports, then convert it back to nominal dollars when inflation mode is on.
+      const chartValue = cycleProjectionChartValueAt(t);
+      if (Number.isFinite(chartValue) && chartValue > 0) return nominalFromChartPrice(chartValue, t);
+      const raw = rawCycleProjectionPriceAt(t);
+      return Number.isFinite(raw) && raw > 0 ? raw : NaN;
+    }
+
+    function btcMarketPriceAt(t) {
+      if (imported.length) {
+        const latest = imported.reduce((a, b) => a.t > b.t ? a : b);
+        if (t <= latest.t) {
+          const v = interpolatedSeriesValueAt(imported, t, "price");
+          if (Number.isFinite(v) && v > 0) return v;
+        }
+      }
+      const projected = cycleProjectionNominalPriceAt(t);
+      return Number.isFinite(projected) && projected > 0 ? projected : powerPrice(daysSinceGenesis(t));
+    }
+
+    function mstrMarketPriceAt(t) {
+      if (mstrImported.length) {
+        const latest = mstrImported.reduce((a, b) => a.t > b.t ? a : b);
+        if (t <= latest.t) {
+          const v = interpolatedSeriesValueAt(mstrImported, t, "price");
+          if (Number.isFinite(v) && v > 0) return v;
+        }
+      }
+      const projected = strategyProjectionNominalPriceAt(t);
+      if (Number.isFinite(projected) && projected > 0) return projected;
+      const st = interpolatedStrategyAt(t);
+      return st ? st.mstrPrice : NaN;
+    }
+
+    function advanceCadenceMs(ms, cadence) {
+      if (cadence === "daily") return ms + DAY;
+      if (cadence === "weekly") return ms + 7 * DAY;
+      if (cadence === "monthly") {
+        const d = new Date(ms);
+        const y = d.getUTCFullYear();
+        const m = d.getUTCMonth() + 1;
+        const day = d.getUTCDate();
+        const nextFirst = Date.UTC(y, m + 1, 1);
+        const nextLastDay = new Date(Date.UTC(y, m + 2, 0)).getUTCDate();
+        return Date.UTC(y, m, Math.min(day, nextLastDay));
+      }
+      return Infinity;
+    }
+
+    function normalizeCadenceStart(dateStr) {
+      const parsed = parseDate(dateStr) || today;
+      return startOfDayUTC(parsed).getTime();
+    }
+
+    function buildPortfolioRows() {
+      portfolioRows = [];
+      const ps = getPortfolioSettings();
+      const startT = today.getTime();
+      let btcHoldings = ps.btcHoldings;
+      let mstrShares = ps.mstrShares;
+      let btcDcaSpent = 0;
+      let mstrDcaSpent = 0;
+      let nextBtcDca = ps.btcDcaFrequency === "none" ? Infinity : Math.max(startT, normalizeCadenceStart(ps.btcDcaStart));
+      let nextMstrDca = ps.mstrDcaFrequency === "none" ? Infinity : Math.max(startT, normalizeCadenceStart(ps.mstrDcaStart));
+      for (let t = startT; t <= state.endMs; t += DAY) {
+        const btcPrice = btcMarketPriceAt(t);
+        const mstrPrice = mstrMarketPriceAt(t);
+        if (t === nextBtcDca && ps.btcDcaAmount > 0 && Number.isFinite(btcPrice) && btcPrice > 0) {
+          btcHoldings += ps.btcDcaAmount / btcPrice;
+          btcDcaSpent += ps.btcDcaAmount;
+          nextBtcDca = advanceCadenceMs(nextBtcDca, ps.btcDcaFrequency);
+        }
+        if (t === nextMstrDca && ps.mstrDcaAmount > 0 && Number.isFinite(mstrPrice) && mstrPrice > 0) {
+          mstrShares += ps.mstrDcaAmount / mstrPrice;
+          mstrDcaSpent += ps.mstrDcaAmount;
+          nextMstrDca = advanceCadenceMs(nextMstrDca, ps.mstrDcaFrequency);
+        }
+        const btcValue = btcHoldings * btcPrice;
+        const mstrValue = mstrShares * mstrPrice;
+        portfolioRows.push({
+          t,
+          btcPrice,
+          mstrPrice,
+          btcHoldings,
+          mstrShares,
+          btcValue,
+          mstrValue,
+          totalValue: btcValue + mstrValue,
+          btcDcaSpent,
+          mstrDcaSpent,
+          totalDcaSpent: btcDcaSpent + mstrDcaSpent
+        });
+      }
+    }
+
+    function interpolatedPortfolioAt(t) {
+      if (!portfolioRows.length) return null;
+      if (t < portfolioRows[0].t) return null;
+      if (t === portfolioRows[0].t) return { ...portfolioRows[0], t };
+      const last = portfolioRows[portfolioRows.length - 1];
+      if (t >= last.t) return { ...last, t };
+      for (let i = 1; i < portfolioRows.length; i++) {
+        const a = portfolioRows[i - 1], b = portfolioRows[i];
+        if (t <= b.t) {
+          const f = Math.max(0, Math.min(1, (t - a.t) / Math.max(1, b.t - a.t)));
+          const mix = k => Number(a[k]) + (Number(b[k]) - Number(a[k])) * f;
+          return {
+            t,
+            btcPrice: mix("btcPrice"),
+            mstrPrice: mix("mstrPrice"),
+            btcHoldings: mix("btcHoldings"),
+            mstrShares: mix("mstrShares"),
+            btcValue: mix("btcValue"),
+            mstrValue: mix("mstrValue"),
+            totalValue: mix("totalValue"),
+            btcDcaSpent: mix("btcDcaSpent"),
+            mstrDcaSpent: mix("mstrDcaSpent"),
+            totalDcaSpent: mix("totalDcaSpent")
+          };
+        }
+      }
+      return { ...last, t };
+    }
+
+    function portfolioLinePointsForView() {
+      if (!portfolioRows.length) return [];
+      const points = [];
+      const start = interpolatedPortfolioAt(state.viewStartMs);
+      const end = interpolatedPortfolioAt(state.viewEndMs);
+      if (start && Number.isFinite(start.totalValue)) points.push(start);
+      portfolioRows.filter(p => p.t > state.viewStartMs && p.t < state.viewEndMs).forEach(p => points.push(p));
+      if (end && Number.isFinite(end.totalValue)) points.push(end);
+      return points.sort((a, b) => a.t - b.t);
+    }
+
+    function drawPortfolioValueLine(points, key, color, width = 2.4, dash = null, shadow = 0) {
+      if (points.length < 2) return;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      if (dash) ctx.setLineDash(dash);
+      ctx.shadowColor = color;
+      ctx.shadowBlur = shadow;
+      ctx.beginPath();
+      let started = false;
+      points.forEach(p => {
+        const x = xToPx(p.t);
+        const y = yToPxData(p[key], p.t);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPortfolioChart() {
+      const points = portfolioLinePointsForView();
+      if (!points.length) return;
+      drawTodayLine();
+      drawPortfolioValueLine(points, "btcValue", "rgba(125,247,255,.86)", 1.8, [5, 5], 0);
+      drawPortfolioValueLine(points, "mstrValue", "rgba(247,147,26,.88)", 1.8, [5, 5], 0);
+      drawPortfolioValueLine(points, "totalValue", "rgba(255,255,255,.92)", 2.8, null, 8);
+      drawPortfolioCycleMarkers();
+    }
+
+    function drawPortfolioCycleMarkers() {
+      if (!getSettings().showAthAtl || !cycleCache.length || !portfolioRows.length) return;
+      const highlighted = hover ? nearestCyclePoint(pxToX(hover.x)) : null;
+      const visiblePoints = cycleCache.filter(p => p.t >= state.viewStartMs && p.t <= state.viewEndMs);
+      const s = getSettings();
+      ctx.save();
+      visiblePoints.forEach(p => {
+        const row = interpolatedPortfolioAt(p.t);
+        if (!row || !Number.isFinite(row.totalValue)) return;
+        const x = xToPx(p.t);
+        const y = yToPxData(row.totalValue, p.t);
+        if (x < plot.x || x > plot.x + plot.w || y < plot.y || y > plot.y + plot.h) return;
+        const isAth = p.type === "ATH";
+        const isRecover = p.type === "RECOVER";
+        const isHighlighted = highlighted && highlighted.t === p.t && highlighted.type === p.type;
+        const r = isAth ? 5.7 : isRecover ? 3.9 : 5.0;
+        const typeColor = isAth ? "#ffcf5a" : isRecover ? "#9aa3b2" : "#58d0ff";
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = typeColor;
+        ctx.shadowColor = typeColor;
+        ctx.shadowBlur = isRecover ? 8 : 11;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.lineWidth = isHighlighted ? 3.1 : 1.5;
+        ctx.strokeStyle = isHighlighted ? "rgba(255,255,255,.98)" : "rgba(5,7,13,.82)";
+        ctx.stroke();
+        const labelAllowed = s.cycleLabelMode === "all" || (s.cycleLabelMode === "key" && p.t >= today.getTime() && p.type !== "RECOVER");
+        if (labelAllowed && s.cycleLabelMode !== "none") {
+          const label = formatMoney(chartPrice(row.totalValue, p.t), true);
+          queueDeferredLabel(x, y + (isAth ? -11 : 20), label, { color: "rgba(255,255,255,.9)", align: "center" });
+        }
+      });
+      ctx.restore();
+    }
+
+    function portfolioPopupRows(t, yVal) {
+      return buildPopupRows("portfolio", t, yVal);
     }
 
     function drawAxes() {
@@ -8123,7 +8923,8 @@
       line(plot.x, plot.y + plot.h, plot.x + plot.w, plot.y + plot.h);
       ctx.fillStyle = "rgba(238,244,255,.78)";
       ctx.font = "12px system-ui, sans-serif";
-      ctx.fillText(activeMode === "mstr" ? "MSTR projection, USD" : "BTC price, USD", plot.x, 17);
+      const axisTitle = activeMode === "mstr" ? "MSTR projection, USD" : activeMode === "portfolio" ? "Portfolio value, USD" : "BTC price, USD";
+      ctx.fillText(axisTitle + (getSettings().inflationAdjusted ? " (today's dollars)" : ""), plot.x, 17);
       const scale = getSettings().linearScale ? "Linear" : "Logarithmic";
       const label = `${scale} scale`;
       ctx.fillText(label, plot.x + plot.w - ctx.measureText(label).width, 17);
@@ -8156,18 +8957,24 @@
     function drawHover() {
       const t = pxToX(hover.x);
       const yVal = pxToY(hover.y);
-      const x = xToPx(t);
+      const x = Math.max(plot.x, Math.min(plot.x + plot.w, hover.x));
+      const yLine = Math.max(plot.y, Math.min(plot.y + plot.h, hover.y));
       ctx.save();
       ctx.strokeStyle = "rgba(255,255,255,.48)";
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 5]);
       line(x, plot.y, x, plot.y + plot.h);
-      line(plot.x, hover.y, plot.x + plot.w, hover.y);
+      line(plot.x, yLine, plot.x + plot.w, yLine);
       ctx.restore();
 
-      const rows = activeMode === "mstr" ? strategyPopupRows(t, yVal) : btcPopupRows(t, yVal);
+      const rows = activeMode === "mstr" ? strategyPopupRows(t, yVal) : activeMode === "portfolio" ? portfolioPopupRows(t, yVal) : btcPopupRows(t, yVal);
+      drawPopupDots(rows, t);
       const close = `<button type="button" class="tooltip-close" id="tooltipClose">×</button>`;
-      tooltip.innerHTML = close + `<div class="date">${formatDate(new Date(t))}</div>` +
+      const grab = `<span class="tooltip-grab" id="tooltipGrab" title="Drag popup to another corner" aria-label="Drag popup to another corner">☰</span>`;
+      const mobileMode = isMobilePopupMode();
+      tooltip.classList.toggle("anchored", !mobileMode && tooltipAnchorMode);
+      tooltip.classList.toggle("mobile", mobileMode);
+      tooltip.innerHTML = close + grab + `<div class="date">${formatDate(new Date(t))}</div>` +
         rows.map(row => row.separator
           ? `<div class="row separator"></div>`
           : `<div class="row" style="color:${row.color || "#dbe6ff"}"><span>${escapeHtml(row.label)}</span><strong>${escapeHtml(row.value)}</strong></div>`
@@ -8177,24 +8984,134 @@
       if (closeBtn) closeBtn.addEventListener("click", e => {
         e.stopPropagation();
         hover = null;
+        pinnedHover = false;
+        pinnedHoverData = null;
         tooltip.style.display = "none";
         draw();
       });
 
       const cardRect = chartCard.getBoundingClientRect();
-      tooltip.style.maxHeight = `${Math.max(160, plot.y + plot.h - 18)}px`;
       tooltip.style.display = "block";
+      if (mobileMode) {
+        tooltip.style.left = `0px`;
+        tooltip.style.top = `${Math.floor(cardRect.height * 0.5)}px`;
+        tooltip.style.maxHeight = `${Math.max(140, cardRect.height - Math.floor(cardRect.height * 0.5))}px`;
+        return;
+      }
+      tooltip.style.maxHeight = `${Math.max(160, plot.y + plot.h - 18)}px`;
       const tipRect = tooltip.getBoundingClientRect();
       const tipW = Math.min(tipRect.width || 320, cardRect.width - 24);
       const tipH = Math.min(tipRect.height || 260, plot.y + plot.h - 18);
-      let left = hover.x + 16;
-      if (left + tipW > cardRect.width - 12) left = hover.x - tipW - 16;
-      left = Math.max(12, Math.min(cardRect.width - tipW - 12, left));
-      let top = hover.y + 16;
-      if (top + tipH > plot.y + plot.h - 8) top = hover.y - tipH - 16;
-      top = Math.max(12, Math.min(plot.y + plot.h - tipH - 8, top));
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
+      if (tooltipAnchorMode) {
+        placeAnchoredTooltip(tipW, tipH);
+      } else {
+        let left = hover.x + 16;
+        if (left + tipW > cardRect.width - 12) left = hover.x - tipW - 16;
+        left = Math.max(12, Math.min(cardRect.width - tipW - 12, left));
+        let top = hover.y + 16;
+        if (top + tipH > plot.y + plot.h - 8) top = hover.y - tipH - 16;
+        top = Math.max(12, Math.min(plot.y + plot.h - tipH - 8, top));
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+      }
+    }
+
+    function placeAnchoredTooltip(tipW, tipH) {
+      const rect = chartCard.getBoundingClientRect();
+      const maxLeft = Math.max(0, rect.width - tipW);
+      const maxTop = Math.max(0, rect.height - tipH);
+      const positions = {
+        topLeft: { left: 0, top: 0 },
+        topRight: { left: maxLeft, top: 0 },
+        bottomLeft: { left: 0, top: maxTop },
+        bottomRight: { left: maxLeft, top: maxTop }
+      };
+      const pos = positions[tooltipCorner] || positions.topRight;
+      tooltip.style.left = `${Math.max(0, Math.min(maxLeft, pos.left))}px`;
+      tooltip.style.top = `${Math.max(0, Math.min(maxTop, pos.top))}px`;
+    }
+
+    function toggleTooltipAnchorMode() {
+      tooltipAnchorMode = !tooltipAnchorMode;
+      const btn = $("toggleTooltipAnchor");
+      if (btn) {
+        btn.classList.toggle("active", tooltipAnchorMode);
+        btn.title = tooltipAnchorMode ? "Popup anchored to corner" : "Popup follows pointer";
+      }
+      if (hover) draw();
+    }
+
+    function onTooltipPointerDown(e) {
+      if (!tooltipAnchorMode || !e.target.closest("#tooltipGrab")) return;
+      e.preventDefault();
+      tooltipDrag = { pointerId: e.pointerId };
+      try { tooltip.setPointerCapture(e.pointerId); } catch {}
+    }
+
+    function onTooltipPointerMove(e) {
+      if (!tooltipDrag) return;
+      const card = chartCard.getBoundingClientRect();
+      const x = e.clientX - card.left;
+      const y = e.clientY - card.top;
+      const midX = plot.x + plot.w / 2;
+      const midY = plot.y + plot.h / 2;
+      tooltipCorner = (y < midY ? "top" : "bottom") + (x < midX ? "Left" : "Right");
+      if (hover) draw();
+    }
+
+    function onTooltipPointerUp(e) {
+      if (!tooltipDrag) return;
+      try { tooltip.releasePointerCapture(e.pointerId); } catch {}
+      tooltipDrag = null;
+      if (hover) draw();
+    }
+
+
+    function drawPopupDots(rows, t) {
+      const x = xToPx(t);
+      if (!Number.isFinite(x) || x < plot.x || x > plot.x + plot.w) return;
+      ctx.save();
+      rows.filter(r => r && !r.separator && !r.hideDot && Number.isFinite(r.dotPrice)).forEach(r => {
+        const y = yToPx(r.dotPrice);
+        if (!Number.isFinite(y) || y < plot.y || y > plot.y + plot.h) return;
+        const color = r.dotColor || r.color || "#ffffff";
+        const glow = r.dotGlow || color;
+        const radius = r.dotRadius || 2.0;
+        const glowSize = r.dotGlowSize ?? 3.2;
+        const alpha1 = r.dotGlowAlpha ?? 0.16;
+        const alpha2 = r.dotGlowAlpha2 ?? Math.max(0, Math.min(1, alpha1 * 0.66));
+        const outerRadius = radius + (glowSize * 1.35);
+        const innerRadius = radius + (glowSize * 0.8);
+
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        if (glowSize > 0 && alpha1 > 0) {
+          ctx.fillStyle = colorToRgba(glow, alpha1);
+          ctx.beginPath();
+          ctx.arc(x, y, outerRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (glowSize > 0 && alpha2 > 0) {
+          ctx.fillStyle = colorToRgba(glow, alpha2);
+          ctx.beginPath();
+          ctx.arc(x, y, innerRadius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowColor = glow;
+        ctx.shadowBlur = Math.max(0, 6 + glowSize * 1.8);
+        ctx.fill();
+        ctx.shadowBlur = Math.max(0, 3 + glowSize * 1.2);
+        ctx.lineWidth = 0.95;
+        ctx.strokeStyle = r.dotStroke || "rgba(255,255,255,.82)";
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      });
+      ctx.restore();
     }
 
     function btcPopupRows(t, yVal) {
@@ -8206,64 +9123,109 @@
     }
 
     function buildPopupRows(mode, t, yVal) {
-      return (popupConfig[mode] || [])
+      const rawRows = (popupConfig[mode] || [])
         .filter(item => item.visible !== false)
-        .flatMap(item => popupRowValue(mode, item.key, t, yVal))
+        .flatMap(item => popupRowValue(mode, item, t, yVal))
         .filter(Boolean);
+      return cleanPopupRows(rawRows);
     }
 
-    function popupRowValue(mode, key, t, yVal) {
-      return mode === "mstr" ? strategyPopupRowValue(key, t, yVal) : btcPopupRowValue(key, t, yVal);
+    function cleanPopupRows(rows) {
+      const out = [];
+      rows.forEach(row => {
+        if (!row) return;
+        if (row.separator) {
+          if (out.length && out[out.length - 1].separator) return;
+          out.push(row);
+        } else {
+          out.push(row);
+        }
+      });
+      while (out.length && out[out.length - 1].separator) out.pop();
+      return out;
     }
 
-    function btcPopupRowValue(key, t, yVal) {
+    function popupRowValue(mode, itemOrKey, t, yVal) {
+      const item = typeof itemOrKey === "string" ? { key: itemOrKey } : itemOrKey;
+      return mode === "mstr" ? strategyPopupRowValue(item, t, yVal) : mode === "portfolio" ? portfolioPopupRowValue(item, t, yVal) : btcPopupRowValue(item, t, yVal);
+    }
+
+    function btcPopupRowValue(item, t, yVal) {
+      const key = item.key;
       const s = getSettings();
       const base = powerPrice(daysSinceGenesis(t));
-      const band = bands.find(b => b.visible && yVal >= base * b.lower && yVal <= base * b.upper);
-      const visibleBands = bands.filter(b => b.visible);
+      const band = bands.find(b => {
+        if (!b.visible) return false;
+        const lo = chartPrice(base * b.lower, t);
+        const hi = chartPrice(base * b.upper, t);
+        return yVal >= Math.min(lo, hi) && yVal <= Math.max(lo, hi);
+      });
       switch (key) {
-        case "cursorPrice": return [{ label: "Cursor price", value: formatMoney(yVal), color: "#ffffff" }];
+        case "cursorPrice": return [{ label: "Cursor price", value: formatPopupMoney(yVal), color: "#ffffff" }];
         case "band": return [{ label: "Band", value: band ? band.name : "Outside visible bands", color: band ? band.color : "#ffffff" }];
         case "separatorTop": return [{ separator: true }];
-        case "bandPrices": {
-          const rows = [];
-          let fairInserted = false;
-          visibleBands.filter(b => b.upper > 1).sort((a, b) => b.upper - a.upper).forEach(b => {
-            rows.push({ label: `${b.name} high`, value: formatMoney(base * b.upper), color: b.color });
-            if (!fairInserted && b.name.toLowerCase() === "fair value") {
-              rows.push({ label: "Fair value", value: formatMoney(base * s.fair), color: "#ffffff" });
-              fairInserted = true;
-            }
-          });
-          if (!fairInserted) rows.push({ label: "Fair value", value: formatMoney(base * s.fair), color: "#ffffff" });
-          rows.push({ label: "Bottom line", value: formatMoney(base * s.bottom), color: "#7ab2ff" });
-          visibleBands.filter(b => b.lower < 1).sort((a, b) => b.lower - a.lower).forEach(b => {
-            rows.push({ label: `${b.name} low`, value: formatMoney(base * b.lower), color: b.color });
-          });
-          return rows;
-        }
+        case "bandPrices": return btcBandPriceRows(t, base, item);
         case "nearestCycle": {
           const cp = nearestCyclePoint(t);
-          return cp ? [{ label: "Nearest ATH/ATL", value: `${cp.type} ${formatMoney(cp.price)} (${formatDate(new Date(cp.t), true)})`, color: cp.type === "ATH" ? "#ffcf5a" : cp.type === "RECOVER" ? "#b7d0ff" : "#58d0ff" }] : [];
+          if (!cp) return [];
+          const label = `Nearest ${cp.type === "RECOVER" ? "RECOVER" : cp.type}`;
+          return [{ label, value: `${formatPopupMoney(chartPrice(cp.price, cp.t))} (${formatDate(new Date(cp.t), true)})`, color: cp.type === "ATH" ? "#ffcf5a" : cp.type === "RECOVER" ? "#b7d0ff" : "#58d0ff", dotPrice: chartPrice(cp.price, cp.t) }];
         }
-        case "btcBase": return [{ label: "Base power-law", value: formatMoney(base), color: "#dbe6ff" }];
-        case "fairValue": return [{ label: "Fair value", value: formatMoney(base * s.fair), color: "#ffffff" }];
-        case "bottomLine": return [{ label: "Bottom line", value: formatMoney(base * s.bottom), color: "#7ab2ff" }];
+        case "cycleOverlayValue": {
+          const value = cycleProjectionChartValueAt(t);
+          return Number.isFinite(value) ? [{ label: "ATH/ATL projection", value: formatPopupMoney(value), color: "#ffffff", dotPrice: value, dotColor: "#05070d", dotGlow: "rgba(0,0,0,1)", dotStroke: "rgba(255,255,255,.92)", dotRadius: 2.15, dotGlowAlpha: 0.55, dotGlowAlpha2: 0.42 }] : [];
+        }
+        case "btcBase": return [{ label: "Base power-law", value: formatPopupMoney(chartPrice(base, t)), color: "#dbe6ff", dotPrice: chartPrice(base, t) }];
+        case "fairValue": return [{ label: "Fair value", value: formatPopupMoney(chartPrice(base * s.fair, t)), color: "#ffffff", dotPrice: chartPrice(base * s.fair, t) }];
+        case "bottomLine": return [{ label: "Bottom line", value: formatPopupMoney(chartPrice(base * s.bottom, t)), color: "#7ab2ff", dotPrice: chartPrice(base * s.bottom, t) }];
         case "daysSinceGenesis": return [{ label: "Days since genesis", value: Math.round(daysSinceGenesis(t)).toLocaleString(), color: "#dbe6ff" }];
         case "activeFormula": return [{ label: "Formula preset", value: presets[controls.preset.value]?.name || "Custom", color: "#dbe6ff" }];
+        case "historicalActual": {
+          const p = exactHistoricalAt(imported, t);
+          return p ? [{ label: "Historical actual", value: formatPopupMoney(chartPrice(p.price, p.t)), color: "#7df7ff", dotPrice: chartPrice(p.price, p.t) }] : [];
+        }
         default: return [];
       }
     }
 
-    function strategyPopupRowValue(key, t, yVal) {
+    function btcBandPriceRows(t, base, item) {
+      const s = getSettings();
+      ensurePopupItemOptions("btc", item);
+      const rows = [];
+      bands.filter(b => b.visible && b.upper > 1).sort((a, b) => b.upper - a.upper).forEach(b => {
+        const id = `high:${b.name}`;
+        if (popupOptionOn(item, id)) rows.push(applyPopupBandDotOptions({ label: item.options?.shortenLabels ? shortenBandLabel(b.name, true) : `${cleanMstrBandName(b.name)} high`, value: formatPopupMoney(chartPrice(base * b.upper, t)), color: b.color, dotPrice: chartPrice(base * b.upper, t) }, item));
+      });
+      if (popupOptionOn(item, "fair")) rows.push(applyPopupBandDotOptions({ label: "Fair value", value: formatPopupMoney(chartPrice(base * s.fair, t)), color: "#ffffff", dotPrice: chartPrice(base * s.fair, t) }, item));
+      bands.filter(b => b.visible && b.upper <= 1 && b.lower > s.bottom).sort((a, b) => b.lower - a.lower).forEach(b => {
+        const id = `low:${b.name}`;
+        if (popupOptionOn(item, id)) rows.push(applyPopupBandDotOptions({ label: item.options?.shortenLabels ? shortenBandLabel(b.name, true) : `${cleanMstrBandName(b.name)} low`, value: formatPopupMoney(chartPrice(base * b.lower, t)), color: b.color, dotPrice: chartPrice(base * b.lower, t) }, item));
+      });
+      if (popupOptionOn(item, "bottom")) rows.push(applyPopupBandDotOptions({ label: "Bottom line", value: formatPopupMoney(chartPrice(base * s.bottom, t)), color: "#7ab2ff", dotPrice: chartPrice(base * s.bottom, t) }, item));
+      bands.filter(b => b.visible && b.upper <= 1 && b.lower <= s.bottom).sort((a, b) => b.lower - a.lower).forEach(b => {
+        const id = `low:${b.name}`;
+        if (popupOptionOn(item, id)) rows.push(applyPopupBandDotOptions({ label: item.options?.shortenLabels ? shortenBandLabel(b.name, true) : `${cleanMstrBandName(b.name)} low`, value: formatPopupMoney(chartPrice(base * b.lower, t)), color: b.color, dotPrice: chartPrice(base * b.lower, t) }, item));
+      });
+      return rows;
+    }
+
+    function strategyPopupRowValue(item, t, yVal) {
+      const key = item.key;
       const nearest = nearestStrategyPoint(t);
       const ss = getStrategySettings();
       switch (key) {
-        case "cursorPrice": return [{ label: "Cursor price", value: formatMoney(yVal), color: "#ffffff" }];
-        case "nearestEvent": return nearest ? [{ label: "Nearest event", value: `${nearest.type} ${formatDate(new Date(nearest.t), true)}`, color: nearest.type === "ATH" ? "#ffcf5a" : nearest.type === "RECOVER" ? "#b7d0ff" : "#58d0ff" }] : [];
+        case "cursorPrice": return [{ label: "Cursor price", value: formatPopupMoney(yVal), color: "#ffffff" }];
+        case "nearestEvent": return nearest ? [{ label: `Nearest ${nearest.type}`, value: `${formatPopupMoney(chartPrice(nearest.mstrPrice, nearest.t))} (${formatDate(new Date(nearest.t), true)})`, color: nearest.type === "ATH" ? "#ffcf5a" : nearest.type === "RECOVER" ? "#b7d0ff" : "#58d0ff", dotPrice: chartPrice(nearest.mstrPrice, nearest.t) }] : [];
+        case "cycleOverlayValue": {
+          const value = strategyProjectionChartValueAt(t);
+          return Number.isFinite(value) ? [{ label: "ATH/ATL projection", value: formatPopupMoney(value), color: "#ffffff", dotPrice: value, dotColor: "#05070d", dotGlow: "rgba(0,0,0,1)", dotStroke: "rgba(255,255,255,.92)", dotRadius: 2.15, dotGlowAlpha: 0.55, dotGlowAlpha2: 0.42 }] : [];
+        }
         case "separatorTop": return [{ separator: true }];
-        case "mstrPrice": return nearest ? [{ label: "MSTR price", value: formatMoney(nearest.mstrPrice), color: "#f7931a" }] : [];
-        case "btcPrice": return nearest ? [{ label: "BTC price", value: formatMoney(nearest.btcPrice), color: "#7df7ff" }] : [];
+        case "mstrPrice": {
+          const value = strategyProjectionChartValueAt(t);
+          return Number.isFinite(value) ? [{ label: "MSTR price", value: formatPopupMoney(value), color: "#f7931a", dotPrice: value }] : [];
+        }
+        case "btcPrice": return nearest ? [{ label: "BTC price", value: formatPopupMoney(chartPrice(nearest.btcPrice, nearest.t)), color: "#7df7ff" }] : [];
         case "mnav": return nearest ? [{ label: "mNAV", value: nearest.mnav.toFixed(2), color: "#ffcf5a" }] : [];
         case "satsPerShare": return nearest ? [{ label: "Sats per share", value: Math.round(nearest.satsPerShare).toLocaleString(), color: "#b7d0ff" }] : [];
         case "mstrRainbowBand": {
@@ -8272,31 +9234,224 @@
           const label = info.mode === "btc" ? "BTC-derived band" : "mNAV band";
           return [{ label, value: info.current ? info.current.band.name : "Outside visible bands", color: info.current ? info.current.band.color : "#ffffff" }];
         }
-        case "mstrRainbowPrices": {
-          const info = mstrRainbowInfoAt(t, yVal);
-          if (!info) return [];
-          return info.rows
-            .sort((a, b) => b.upper - a.upper)
-            .flatMap(r => {
-              const highNote = info.mode === "mnav" ? ` (${Number(r.band.upper).toFixed(2)} mNAV)` : " high";
-              const lowNote = info.mode === "mnav" ? ` (${Number(r.band.lower).toFixed(2)} mNAV)` : " low";
-              return [
-                { label: `${r.band.name}${highNote}`, value: formatMoney(r.upper), color: r.band.color },
-                { label: `${r.band.name}${lowNote}`, value: formatMoney(r.lower), color: r.band.color }
-              ];
-            });
-        }
+        case "mstrRainbowPrices": return mstrBandPriceRows(t, item);
         case "mstrFairValue": {
           const st = interpolatedStrategyAt(t);
           if (!st) return [];
-          return [{ label: "MSTR fair value", value: formatMoney(st.btcPrice * (st.satsPerShare / 100000000)), color: "#77e7a8" }];
+          return [{ label: "Fair value", value: formatPopupMoney(chartPrice(st.btcPrice * (st.satsPerShare / 100000000), t)), color: "#77e7a8", dotPrice: chartPrice(st.btcPrice * (st.satsPerShare / 100000000), t) }];
         }
         case "mstrRainbowMode": return [{ label: "MSTR rainbow mode", value: ss.rainbowMode === "btc" ? "BTC-derived bands" : ss.rainbowMode === "mnav" ? "mNAV bands" : "Off", color: "#dbe6ff" }];
         case "eventType": return nearest ? [{ label: "Event type", value: nearest.type, color: "#dbe6ff" }] : [];
         case "eventDate": return nearest ? [{ label: "Event date", value: formatDate(new Date(nearest.t), true), color: "#dbe6ff" }] : [];
         case "impliedBtc": return nearest ? [{ label: "Implied BTC holdings", value: Math.round(ss.startBtcHoldings * (nearest.satsPerShare / ss.startBps)).toLocaleString(), color: "#dbe6ff" }] : [];
+        case "historicalActual": {
+          const p = nearestHistoricalAt(mstrImported, t, 7 * DAY);
+          return p ? [{ label: "Historical actual", value: formatPopupMoney(chartPrice(p.price, p.t)), color: "#7df7ff", dotPrice: chartPrice(p.price, p.t) }] : [];
+        }
         default: return [];
       }
+    }
+
+    function portfolioPopupRowValue(item, t, yVal) {
+      const key = item.key;
+      const p = interpolatedPortfolioAt(t);
+      if (!p) return [];
+      switch (key) {
+        case "cursorValue": return [{ label: "Cursor value", value: formatPopupMoney(yVal), color: "#ffffff" }];
+        case "portfolioValue": return [{ label: "Portfolio value", value: formatPopupMoney(chartPrice(p.totalValue, t)), color: "#ffffff", dotPrice: chartPrice(p.totalValue, t), dotColor: "#ffffff", dotGlow: "rgba(255,255,255,.9)", dotRadius: 2.3 }];
+        case "separatorTop": return [{ separator: true }];
+        case "btcHoldings": return [{ label: "BTC holdings", value: p.btcHoldings.toLocaleString(undefined, { maximumFractionDigits: 8 }), color: "#7df7ff" }];
+        case "mstrShares": return [{ label: "MSTR shares", value: p.mstrShares.toLocaleString(undefined, { maximumFractionDigits: 4 }), color: "#f7931a" }];
+        case "btcPrice": return [{ label: "BTC price", value: formatPopupMoney(chartPrice(p.btcPrice, t)), color: "#7df7ff" }];
+        case "mstrPrice": return [{ label: "MSTR price", value: formatPopupMoney(chartPrice(p.mstrPrice, t)), color: "#f7931a" }];
+        case "btcValue": return [{ label: "BTC holdings value", value: formatPopupMoney(chartPrice(p.btcValue, t)), color: "#7df7ff", dotPrice: chartPrice(p.btcValue, t), dotColor: "#7df7ff" }];
+        case "mstrValue": return [{ label: "MSTR shares value", value: formatPopupMoney(chartPrice(p.mstrValue, t)), color: "#f7931a", dotPrice: chartPrice(p.mstrValue, t), dotColor: "#f7931a" }];
+        case "totalDcaSpend": return [{ label: "Total DCA spend", value: formatPopupMoney(p.totalDcaSpent), color: "#dbe6ff" }];
+        case "btcDcaSpend": return [{ label: "BTC DCA spend", value: formatPopupMoney(p.btcDcaSpent), color: "#7df7ff" }];
+        case "mstrDcaSpend": return [{ label: "MSTR DCA spend", value: formatPopupMoney(p.mstrDcaSpent), color: "#f7931a" }];
+        default: return [];
+      }
+    }
+
+    function mstrBandPriceRows(t, item) {
+      const info = mstrRainbowInfoAt(t, 0);
+      const st = interpolatedStrategyAt(t);
+      if (!info || !st) return [];
+      ensurePopupItemOptions("mstr", item);
+      if (info.mode === "btc") return mstrBtcDerivedPriceRows(t, item);
+      const rows = [];
+      const highBands = mstrBands.filter(b => b.visible && b.lower >= 1 && !String(b.name).toLowerCase().includes("fair")).sort((a, b) => b.upper - a.upper);
+      highBands.forEach(b => {
+        const id = `high:${b.name}`;
+        const raw = mstrRainbowPriceAt(t, b, "upper", "mnav");
+        const value = chartPrice(raw, t);
+        if (popupOptionOn(item, id)) rows.push(applyPopupBandDotOptions({ label: mstrBandDisplayLabel(b, "high", item.options.labelStyle, item.options.shortenLabels), value: formatPopupMoney(value), color: b.color, dotPrice: value }, item));
+      });
+      const fairRaw = st.btcPrice * (st.satsPerShare / 100000000);
+      const fairValue = chartPrice(fairRaw, t);
+      if (popupOptionOn(item, "fair")) rows.push(applyPopupBandDotOptions({ label: "Fair value", value: formatPopupMoney(fairValue), color: "#ffffff", dotPrice: fairValue }, item));
+      mstrBands.filter(b => b.visible && b.upper <= 1).sort((a, b) => b.lower - a.lower).forEach(b => {
+        const id = `low:${b.name}`;
+        const raw = mstrRainbowPriceAt(t, b, "lower", "mnav");
+        const value = chartPrice(raw, t);
+        if (popupOptionOn(item, id)) rows.push(applyPopupBandDotOptions({ label: mstrBandDisplayLabel(b, "low", item.options.labelStyle, item.options.shortenLabels), value: formatPopupMoney(value), color: b.color, dotPrice: value }, item));
+      });
+      return rows;
+    }
+
+    function mstrBtcDerivedPriceRows(t, item) {
+      const rows = [];
+      bands.filter(b => b.visible && b.upper > 1).sort((a, b) => b.upper - a.upper).forEach(b => {
+        const id = `high:${b.name}`;
+        const raw = mstrRainbowPriceAt(t, b, "upper", "btc");
+        const value = chartPrice(raw, t);
+        if (popupOptionOn(item, id)) rows.push(applyPopupBandDotOptions({ label: item.options?.shortenLabels ? shortenBandLabel(b.name, true) : `${shortenBandLabel(b.name, false)} high`, value: formatPopupMoney(value), color: b.color, dotPrice: value }, item));
+      });
+      const st = interpolatedStrategyAt(t);
+      if (st && popupOptionOn(item, "fair")) {
+        const raw = powerPrice(daysSinceGenesis(t)) * (st.satsPerShare / 100000000) * st.mnav;
+        const value = chartPrice(raw, t);
+        rows.push(applyPopupBandDotOptions({ label: "Fair value", value: formatPopupMoney(value), color: "#ffffff", dotPrice: value }, item));
+      }
+      bands.filter(b => b.visible && b.upper <= 1).sort((a, b) => b.lower - a.lower).forEach(b => {
+        const id = `low:${b.name}`;
+        const raw = mstrRainbowPriceAt(t, b, "lower", "btc");
+        const value = chartPrice(raw, t);
+        if (popupOptionOn(item, id)) rows.push(applyPopupBandDotOptions({ label: item.options?.shortenLabels ? shortenBandLabel(b.name, true) : `${shortenBandLabel(b.name, false)} low`, value: formatPopupMoney(value), color: b.color, dotPrice: value }, item));
+      });
+      return rows;
+    }
+
+    function cleanMstrBandName(name) {
+      return String(name || "").replace(/\s+premium\b/gi, "").replace(/\s+value\b/gi, " value").trim();
+    }
+
+    function shortenBandLabel(name, shorten = false) {
+      const cleaned = cleanMstrBandName(name);
+      return shorten ? cleaned.split(/\s+/)[0] : cleaned;
+    }
+
+    function mstrLowLabel(b, shorten = false) {
+      const name = cleanMstrBandName(b.name).toLowerCase();
+      if (name.includes("base")) return shorten ? "Base" : "Base low";
+      if (name.includes("discount") && !name.includes("deep")) return shorten ? "Discount" : "Discount low";
+      if (name.includes("deep")) return shorten ? "Deep" : "Deep low";
+      return `${shortenBandLabel(b.name, shorten)} low`;
+    }
+
+    function mstrBandDisplayLabel(b, edge, style = "name", shorten = false) {
+      const base = edge === "low" ? mstrLowLabel(b, shorten) : (shorten ? shortenBandLabel(b.name, true) : `${shortenBandLabel(b.name, false)} high`);
+      const mnav = edge === "low" ? Number(b.lower) : Number(b.upper);
+      if (style === "mnav") return `${mnav.toFixed(2)} mNAV`;
+      if (style === "both") return `${base} (${mnav.toFixed(2)} mNAV)`;
+      return base;
+    }
+
+    function exactHistoricalAt(source, t) {
+      const day = isoDate(new Date(t));
+      return (source || []).find(p => isoDate(new Date(p.t)) === day) || null;
+    }
+
+    function nearestHistoricalAt(source, t, maxDist = DAY / 2) {
+      let best = null;
+      let bestDist = Infinity;
+      (source || []).forEach(p => {
+        const dist = Math.abs(p.t - t);
+        if (dist < bestDist) { best = p; bestDist = dist; }
+      });
+      return best && bestDist <= maxDist ? best : null;
+    }
+
+    function interpolatedCycleAt(t) {
+      if (!cycleCache.length) return null;
+      const rows = cycleCache;
+      if (t <= rows[0].t) return { ...rows[0], t };
+      const last = rows[rows.length - 1];
+      if (t >= last.t) return { ...last, t };
+      for (let i = 1; i < rows.length; i++) {
+        const a = rows[i - 1];
+        const b = rows[i];
+        if (t <= b.t) {
+          const f = Math.max(0, Math.min(1, (t - a.t) / Math.max(1, b.t - a.t)));
+          return {
+            type: f < .5 ? a.type : b.type,
+            t,
+            price: a.price + (b.price - a.price) * f,
+            cycle: f < .5 ? a.cycle : b.cycle
+          };
+        }
+      }
+      return { ...last, t };
+    }
+
+    function sampleTimesForView(extraPoints = [], maxSamples = 420) {
+      const set = new Set([state.viewStartMs, state.viewEndMs]);
+      const span = Math.max(1, state.viewEndMs - state.viewStartMs);
+      const count = Math.max(48, Math.min(maxSamples, Math.round(plot.w / 5)));
+      for (let i = 0; i <= count; i++) set.add(state.viewStartMs + span * (i / count));
+      (extraPoints || []).forEach(p => {
+        if (p && p.t >= state.viewStartMs && p.t <= state.viewEndMs) set.add(p.t);
+      });
+      return [...set].filter(Number.isFinite).sort((a, b) => a - b);
+    }
+
+    function cycleLinePointsForView() {
+      if (!cycleCache.length) return [];
+      const points = [];
+      const startChart = cycleProjectionChartValueAt(state.viewStartMs);
+      const endChart = cycleProjectionChartValueAt(state.viewEndMs);
+      if (Number.isFinite(startChart) && startChart > 0) points.push({ t: state.viewStartMs, price: nominalFromChartPrice(startChart, state.viewStartMs), type: "EDGE" });
+      cycleCache.filter(p => p.t > state.viewStartMs && p.t < state.viewEndMs).forEach(p => points.push(p));
+      if (Number.isFinite(endChart) && endChart > 0) points.push({ t: state.viewEndMs, price: nominalFromChartPrice(endChart, state.viewEndMs), type: "EDGE" });
+      return points.sort((a, b) => a.t - b.t);
+    }
+
+    function strategyLinePointsForView() {
+      if (!strategyRows.length) return [];
+      const points = [];
+      const startChart = strategyProjectionChartValueAt(state.viewStartMs);
+      const endChart = strategyProjectionChartValueAt(state.viewEndMs);
+      if (Number.isFinite(startChart) && startChart > 0) points.push({ t: state.viewStartMs, mstrPrice: nominalFromChartPrice(startChart, state.viewStartMs), type: "EDGE" });
+      strategyRows.filter(p => p.t > state.viewStartMs && p.t < state.viewEndMs).forEach(p => points.push(p));
+      if (Number.isFinite(endChart) && endChart > 0) points.push({ t: state.viewEndMs, mstrPrice: nominalFromChartPrice(endChart, state.viewEndMs), type: "EDGE" });
+      return points.sort((a, b) => a.t - b.t);
+    }
+
+    function screenLineChartValueAt(rows, t, valueKey) {
+      if (!rows || !rows.length) return NaN;
+      if (t <= rows[0].t) return chartPrice(rows[0][valueKey], rows[0].t);
+      const last = rows[rows.length - 1];
+      if (t >= last.t) return chartPrice(last[valueKey], last.t);
+      for (let i = 1; i < rows.length; i++) {
+        const a = rows[i - 1];
+        const b = rows[i];
+        if (t <= b.t) {
+          const f = Math.max(0, Math.min(1, (t - a.t) / Math.max(1, b.t - a.t)));
+          const ya = yToPxData(a[valueKey], a.t);
+          const yb = yToPxData(b[valueKey], b.t);
+          if (!Number.isFinite(ya) || !Number.isFinite(yb)) return chartPrice(a[valueKey] + (b[valueKey] - a[valueKey]) * f, t);
+          return pxToY(ya + (yb - ya) * f);
+        }
+      }
+      return chartPrice(last[valueKey], last.t);
+    }
+
+    function cycleProjectionChartValueAt(t) {
+      return screenLineChartValueAt(cycleCache, t, "price");
+    }
+
+    function strategyProjectionChartValueAt(t) {
+      return screenLineChartValueAt(strategyRows, t, "mstrPrice");
+    }
+
+    function strategyProjectionNominalPriceAt(t) {
+      // Match the same visible straight ATH/ATL projection line used by the MSTR popup.
+      // On a log chart this is log-linear/geometric between event dots, so convert the
+      // displayed chart value back to nominal dollars before using it for portfolio math.
+      const chartValue = strategyProjectionChartValueAt(t);
+      if (Number.isFinite(chartValue) && chartValue > 0) return nominalFromChartPrice(chartValue, t);
+      const st = interpolatedStrategyAt(t);
+      return st && Number.isFinite(st.mstrPrice) && st.mstrPrice > 0 ? st.mstrPrice : NaN;
     }
 
     function nearestCyclePoint(t) {
@@ -8345,6 +9500,27 @@
       const lo = Math.log10(Math.max(state.yMin, 1e-12));
       const hi = Math.log10(Math.max(state.yMax, 1e-12));
       return Math.pow(10, lo + ratio * (hi - lo));
+    }
+
+    function inflationFactorAt(t) {
+      const s = getSettings();
+      if (!s.inflationAdjusted) return 1;
+      const years = (t - today.getTime()) / (365.25 * DAY);
+      return Math.pow(1 + s.inflationRate, years);
+    }
+
+    function chartPrice(value, t) {
+      if (!Number.isFinite(value)) return NaN;
+      return getSettings().inflationAdjusted ? value / inflationFactorAt(t) : value;
+    }
+
+    function nominalFromChartPrice(value, t) {
+      if (!Number.isFinite(value)) return NaN;
+      return getSettings().inflationAdjusted ? value * inflationFactorAt(t) : value;
+    }
+
+    function yToPxData(value, t) {
+      return yToPx(chartPrice(value, t));
     }
 
     function getYTicks() {
@@ -8406,9 +9582,7 @@
 
     function onWheel(e) {
       e.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const { x, y } = canvasPointFromEvent(e);
       const factor = e.deltaY < 0 ? 0.82 : 1.22;
       if (x <= plot.x) zoomYAt(factor, y);
       else zoomXAt(factor, x);
@@ -8458,23 +9632,104 @@
 
     function onPointerDown(e) {
       canvas.setPointerCapture(e.pointerId);
+      const pt = canvasPointFromEvent(e);
+      activePointers.set(e.pointerId, pt);
+      if (activePointers.size === 2) {
+        const pts = [...activePointers.values()];
+        const centerX = (pts[0].x + pts[1].x) / 2;
+        const centerY = (pts[0].y + pts[1].y) / 2;
+        pinchGesture = {
+          ids: [...activePointers.keys()],
+          p1: { ...pts[0] },
+          p2: { ...pts[1] },
+          startMs: state.viewStartMs,
+          endMs: state.viewEndMs,
+          yMin: state.yMin,
+          yMax: state.yMax,
+          centerX,
+          centerY,
+          linearScale: getSettings().linearScale
+        };
+        isDragging = false;
+        dragStart = null;
+        pointerMoved = true;
+        return;
+      }
+      pinchGesture = null;
       isDragging = true;
       pointerMoved = false;
-      const rect = canvas.getBoundingClientRect();
       dragStart = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: pt.x,
+        y: pt.y,
         startMs: state.viewStartMs,
         endMs: state.viewEndMs,
         yMin: state.yMin,
         yMax: state.yMax
       };
+      if (!pinnedHover) hover = { x: pt.x, y: pt.y };
     }
 
     function onPointerMove(e) {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      const pt = canvasPointFromEvent(e);
+      if (activePointers.has(e.pointerId)) activePointers.set(e.pointerId, pt);
+      const { x, y } = pt;
+      if (pinchGesture && activePointers.size >= 2) {
+        const ids = pinchGesture.ids;
+        const a = activePointers.get(ids[0]);
+        const b = activePointers.get(ids[1]);
+        if (!a || !b) return;
+        const startDx = pinchGesture.p2.x - pinchGesture.p1.x;
+        const startDy = pinchGesture.p2.y - pinchGesture.p1.y;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const startAbsX = Math.max(8, Math.abs(startDx));
+        const startAbsY = Math.max(8, Math.abs(startDy));
+        const absX = Math.max(8, Math.abs(dx));
+        const absY = Math.max(8, Math.abs(dy));
+        const total = absX + absY;
+        const weightX = total > 0 ? absX / total : 0.5;
+        const weightY = total > 0 ? absY / total : 0.5;
+        const factorX = Math.pow(startAbsX / absX, Math.max(0, Math.min(1, weightX)));
+        const factorY = Math.pow(startAbsY / absY, Math.max(0, Math.min(1, weightY)));
+        const startSpanX = pinchGesture.endMs - pinchGesture.startMs;
+        let newSpanX = startSpanX * factorX;
+        newSpanX = Math.max(14 * DAY, Math.min(state.endMs - state.startMs, newSpanX));
+        const centerX = (a.x + b.x) / 2;
+        const centerY = (a.y + b.y) / 2;
+        const startCenterRatioX = (pinchGesture.centerX - plot.x) / Math.max(1, plot.w);
+        const currentCenterRatioX = (centerX - plot.x) / Math.max(1, plot.w);
+        const startFocusT = pinchGesture.startMs + startSpanX * startCenterRatioX;
+        let ns = startFocusT - newSpanX * currentCenterRatioX;
+        let ne = ns + newSpanX;
+        if (ns < state.startMs) { ns = state.startMs; ne = ns + newSpanX; }
+        if (ne > state.endMs) { ne = state.endMs; ns = ne - newSpanX; }
+        state.viewStartMs = ns;
+        state.viewEndMs = ne;
+
+        if (weightY > 0.08) {
+          const currentCenterRatioY = 1 - ((centerY - plot.y) / Math.max(1, plot.h));
+          if (pinchGesture.linearScale) {
+            const startSpanY = pinchGesture.yMax - pinchGesture.yMin;
+            let newSpanY = Math.max(10, Math.min(PRICE_MAX, startSpanY * factorY));
+            const focusY = pinchGesture.yMin + startSpanY * (1 - (pinchGesture.centerY - plot.y) / Math.max(1, plot.h));
+            state.yMin = Math.max(0, focusY - newSpanY * currentCenterRatioY);
+            state.yMax = Math.min(PRICE_MAX, focusY + newSpanY * (1 - currentCenterRatioY));
+          } else {
+            const startLo = Math.log10(pinchGesture.yMin);
+            const startHi = Math.log10(pinchGesture.yMax);
+            const startSpanY = startHi - startLo;
+            const newSpanY = Math.max(0.3, Math.min(12, startSpanY * factorY));
+            const focusLog = startLo + startSpanY * (1 - (pinchGesture.centerY - plot.y) / Math.max(1, plot.h));
+            state.yMin = Math.max(PRICE_MIN, Math.pow(10, focusLog - newSpanY * currentCenterRatioY));
+            state.yMax = Math.min(PRICE_MAX, Math.pow(10, focusLog + newSpanY * (1 - currentCenterRatioY)));
+          }
+        }
+        pointerMoved = true;
+        updateMetrics();
+        hover = { x: Math.max(plot.x, Math.min(plot.x + plot.w, centerX)), y: Math.max(plot.y, Math.min(plot.y + plot.h, centerY)) };
+        draw();
+        return;
+      }
       if (isDragging && dragStart) {
         const dx = x - dragStart.x;
         const dy = y - dragStart.y;
@@ -8501,16 +9756,19 @@
         }
         updateMetrics();
         draw();
-      } else if (!pinnedHover) {
+      } else if (!pinnedHover || isMobilePopupMode()) {
         hover = { x, y };
         draw();
       }
     }
 
     function onPointerUp(e) {
+      activePointers.delete(e.pointerId);
+      if (activePointers.size < 2) pinchGesture = null;
       isDragging = false;
       dragStart = null;
       try { canvas.releasePointerCapture(e.pointerId); } catch {}
+      if (isMobilePopupMode()) ensureMobileHover();
     }
 
     function applyDefaultView(redraw = true) {
@@ -8554,41 +9812,104 @@
       if (redraw) draw();
     }
 
+    function fairBandIndex(list) {
+      const idx = list.findIndex(b => /fair/i.test(b.name));
+      return idx >= 0 ? idx : Math.floor(list.length / 2);
+    }
+
+    function syncContiguousBands(list) {
+      const fi = fairBandIndex(list);
+      for (let i = fi - 1; i >= 0; i--) list[i].upper = Number(list[i + 1].lower);
+      for (let i = fi + 1; i < list.length; i++) list[i].lower = Number(list[i - 1].upper);
+      list.forEach(b => {
+        b.lower = Math.max(0.0001, Number(b.lower) || 0.0001);
+        b.upper = Math.max(b.lower + 0.0001, Number(b.upper) || b.lower + 0.0001);
+      });
+    }
+
+    function renderBandNameEditorHtml(b) {
+      return `<span class="swatch" style="background:${b.color}"></span><input class="band-name-input" type="text" value="${escapeHtml(cleanMstrBandName(b.name))}" aria-label="Band name">`;
+    }
+
+    function wireBandNameInput(row, list, i, renderFn) {
+      const input = row.querySelector(".band-name-input");
+      if (!input) return;
+      input.addEventListener("change", () => {
+        const value = input.value.trim();
+        if (value) {
+          list[i].name = value;
+          renderFn();
+          recompute();
+        } else {
+          input.value = cleanMstrBandName(list[i].name);
+        }
+      });
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") input.blur();
+      });
+    }
+
     function renderBandsEditor() {
+      syncContiguousBands(bands);
       bandList.innerHTML = "";
+      const fi = fairBandIndex(bands);
       [...bands].map((b, i) => ({ b, i })).reverse().forEach(({ b, i }) => {
         const row = document.createElement("div");
-        row.className = "band";
+        const isFair = i === fi;
+        row.className = `band${isFair ? " fair-band" : ""}`;
+        const inputHtml = isFair
+          ? `<input class="band-boundary" type="number" step="0.01" value="${b.lower}" title="Fair lower multiplier"><input class="band-boundary" type="number" step="0.01" value="${b.upper}" title="Fair upper multiplier">`
+          : `<input class="band-boundary" type="number" step="0.01" value="${i < fi ? b.lower : b.upper}" title="${i < fi ? "Lower" : "Upper"} multiplier">`;
         row.innerHTML = `
           <input type="checkbox" ${b.visible ? "checked" : ""} title="Show band">
-          <div class="band-name"><span class="swatch" style="background:${b.color}"></span>${escapeHtml(b.name)}</div>
-          <input type="number" step="0.01" value="${b.lower}" title="Lower multiplier">
-          <input type="number" step="0.01" value="${b.upper}" title="Upper multiplier">
+          <div class="band-name">${renderBandNameEditorHtml(b)}</div>
+          ${inputHtml}
         `;
-        const [vis, , lower, upper] = row.children;
+        const vis = row.querySelector('input[type="checkbox"]');
+        const nums = [...row.querySelectorAll('input[type="number"]')];
         vis.addEventListener("change", () => { bands[i].visible = vis.checked; recompute(); });
-        lower.addEventListener("input", () => { bands[i].lower = Number(lower.value); recompute(); });
-        upper.addEventListener("input", () => { bands[i].upper = Number(upper.value); recompute(); });
+        wireBandNameInput(row, bands, i, renderBandsEditor);
+        if (isFair) {
+          nums[0].addEventListener("input", () => { bands[i].lower = Number(nums[0].value); syncContiguousBands(bands); recompute(); });
+          nums[1].addEventListener("input", () => { bands[i].upper = Number(nums[1].value); syncContiguousBands(bands); recompute(); });
+        } else if (i < fi) {
+          nums[0].addEventListener("input", () => { bands[i].lower = Number(nums[0].value); syncContiguousBands(bands); recompute(); });
+        } else {
+          nums[0].addEventListener("input", () => { bands[i].upper = Number(nums[0].value); syncContiguousBands(bands); recompute(); });
+        }
         bandList.appendChild(row);
       });
     }
 
     function renderMstrBandsEditor() {
       if (!mstrBandList) return;
+      syncContiguousBands(mstrBands);
       mstrBandList.innerHTML = "";
+      const fi = fairBandIndex(mstrBands);
       [...mstrBands].map((b, i) => ({ b, i })).reverse().forEach(({ b, i }) => {
         const row = document.createElement("div");
-        row.className = "band";
+        const isFair = i === fi;
+        row.className = `band${isFair ? " fair-band" : ""}`;
+        const inputHtml = isFair
+          ? `<input class="band-boundary" type="number" step="0.01" value="${b.lower}" title="Fair lower mNAV"><input class="band-boundary" type="number" step="0.01" value="${b.upper}" title="Fair upper mNAV">`
+          : `<input class="band-boundary" type="number" step="0.01" value="${i < fi ? b.lower : b.upper}" title="${i < fi ? "Lower" : "Upper"} mNAV">`;
         row.innerHTML = `
           <input type="checkbox" ${b.visible ? "checked" : ""} title="Show band">
-          <div class="band-name"><span class="swatch" style="background:${b.color}"></span>${escapeHtml(b.name)}</div>
-          <input type="number" step="0.01" value="${b.lower}" title="Lower mNAV">
-          <input type="number" step="0.01" value="${b.upper}" title="Upper mNAV">
+          <div class="band-name">${renderBandNameEditorHtml(b)}</div>
+          ${inputHtml}
         `;
-        const [vis, , lower, upper] = row.children;
+        const vis = row.querySelector('input[type="checkbox"]');
+        const nums = [...row.querySelectorAll('input[type="number"]')];
         vis.addEventListener("change", () => { mstrBands[i].visible = vis.checked; recompute(); });
-        lower.addEventListener("input", () => { mstrBands[i].lower = Number(lower.value); recompute(); });
-        upper.addEventListener("input", () => { mstrBands[i].upper = Number(upper.value); recompute(); });
+        wireBandNameInput(row, mstrBands, i, renderMstrBandsEditor);
+        if (isFair) {
+          nums[0].addEventListener("input", () => { mstrBands[i].lower = Number(nums[0].value); syncContiguousBands(mstrBands); recompute(); });
+          nums[1].addEventListener("input", () => { mstrBands[i].upper = Number(nums[1].value); syncContiguousBands(mstrBands); recompute(); });
+        } else if (i < fi) {
+          nums[0].addEventListener("input", () => { mstrBands[i].lower = Number(nums[0].value); syncContiguousBands(mstrBands); recompute(); });
+        } else {
+          nums[0].addEventListener("input", () => { mstrBands[i].upper = Number(nums[0].value); syncContiguousBands(mstrBands); recompute(); });
+        }
         mstrBandList.appendChild(row);
       });
     }
@@ -8619,8 +9940,8 @@
     }
 
     function normalizeConfig(defaultConfig, savedConfig, allowDuplicateDividers = false) {
-      const result = { btc: [], mstr: [] };
-      ["btc", "mstr"].forEach(mode => {
+      const result = { btc: [], mstr: [], portfolio: [] };
+      ["btc", "mstr", "portfolio"].forEach(mode => {
         const defaults = defaultConfig[mode] || [];
         const saved = Array.isArray(savedConfig?.[mode]) ? savedConfig[mode] : [];
         const validKeys = new Set(defaults.map(item => item.key));
@@ -8631,7 +9952,7 @@
             return;
           }
           if (!result[mode].some(x => x.key === item.key)) {
-            result[mode].push({ key: item.key, visible: typeof item.visible === "boolean" ? item.visible : true });
+            result[mode].push({ key: item.key, visible: typeof item.visible === "boolean" ? item.visible : true, ...(item.options ? { options: item.options } : {}) });
           }
         });
         defaults.forEach(item => {
@@ -8640,7 +9961,7 @@
             return;
           }
           if (!result[mode].some(x => x.key === item.key)) {
-            result[mode].push({ key: item.key, visible: item.visible });
+            result[mode].push({ key: item.key, visible: item.visible, ...(item.options ? { options: item.options } : {}) });
           }
         });
       });
@@ -8650,37 +9971,48 @@
     function renderMetricsEditor() {
       renderConfigList("metricListBtc", metricConfig.btc, metricCatalog.btc, () => { updateMetrics(); saveSettings(); });
       renderConfigList("metricListMstr", metricConfig.mstr, metricCatalog.mstr, () => { updateMetrics(); saveSettings(); });
+      renderConfigList("metricListPortfolio", metricConfig.portfolio, metricCatalog.portfolio, () => { updateMetrics(); saveSettings(); });
     }
 
     function renderPopupEditor() {
       renderConfigList("popupListBtc", popupConfig.btc, popupCatalog.btc, () => { saveSettings(); draw(); });
       renderConfigList("popupListMstr", popupConfig.mstr, popupCatalog.mstr, () => { saveSettings(); draw(); });
+      renderConfigList("popupListPortfolio", popupConfig.portfolio, popupCatalog.portfolio, () => { saveSettings(); draw(); });
     }
 
     function renderConfigList(containerId, config, catalog, onChange) {
       const list = $(containerId);
       if (!list) return;
+      const lowerId = containerId.toLowerCase();
+      const mode = lowerId.includes("portfolio") ? "portfolio" : lowerId.includes("mstr") ? "mstr" : "btc";
       list.innerHTML = "";
       config.forEach((item, index) => {
         const def = catalog.find(d => d.key === item.key);
         if (!def) return;
+        ensurePopupItemOptions(mode, item);
         const row = document.createElement("div");
         const isDivider = item.key === "separatorTop";
-        row.className = `config-row${isDivider ? " divider-row" : ""}`;
+        const hasOptions = isPopupOptionsRow(item.key);
+        row.className = `config-row${isDivider ? " divider-row" : ""}${hasOptions ? " has-options" : ""}${item.options?.expanded ? " options-open" : ""}`;
         row.dataset.index = index;
         const help = def.help ? `<button type="button" class="help" data-help="${escapeHtml(def.help)}">?</button>` : "";
+        const rollButton = hasOptions ? `<button type="button" class="roll-toggle" aria-label="Expand ${escapeHtml(def.label)} options"><span class="chev">⌄</span></button>` : "";
         row.innerHTML = isDivider ? `
           <div class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">☰</div>
           <button type="button" class="divider-remove" title="Remove divider" aria-label="Remove divider">×</button>
           <div class="config-text"><strong>${escapeHtml(def.label)}${help}</strong></div>
+          <span></span>
         ` : `
           <div class="drag-handle" title="Drag to reorder" aria-label="Drag to reorder">☰</div>
           <input type="checkbox" ${item.visible ? "checked" : ""} aria-label="Show ${escapeHtml(def.label)}">
           <div class="config-text"><strong>${escapeHtml(def.label)}${help}</strong></div>
+          ${rollButton}
         `;
+        if (hasOptions) row.insertAdjacentHTML("beforeend", renderPopupOptionsSubmenu(mode, item));
         const handle = row.querySelector(".drag-handle");
-        const checkbox = row.querySelector("input");
+        const checkbox = row.querySelector("input[type='checkbox']");
         const remove = row.querySelector(".divider-remove");
+        const roll = row.querySelector(".roll-toggle");
         if (checkbox) {
           checkbox.addEventListener("change", () => {
             item.visible = checkbox.checked;
@@ -8695,6 +10027,41 @@
             onChange?.();
           });
         }
+        if (roll) {
+          roll.addEventListener("click", e => {
+            e.preventDefault();
+            e.stopPropagation();
+            item.options.expanded = !item.options.expanded;
+            renderPopupEditor();
+            saveSettings();
+          });
+        }
+        row.querySelectorAll(".submenu-row input[type='checkbox']").forEach(input => {
+          input.addEventListener("change", () => {
+            if (input.dataset.optionKey) item.options[input.dataset.optionKey] = input.checked;
+            else item.options.items[input.dataset.optionId] = input.checked;
+            renderPopupEditor();
+            onChange?.();
+          });
+        });
+        row.querySelectorAll(".submenu-row select").forEach(select => {
+          select.addEventListener("change", () => {
+            item.options[select.dataset.optionKey] = select.value;
+            renderPopupEditor();
+            onChange?.();
+          });
+        });
+        row.querySelectorAll('.submenu-row input[type="number"]').forEach(input => {
+          input.addEventListener("input", () => {
+            item.options[input.dataset.optionKey] = Number(input.value);
+            onChange?.();
+          });
+          input.addEventListener("change", () => {
+            item.options[input.dataset.optionKey] = Number(input.value);
+            renderPopupEditor();
+            onChange?.();
+          });
+        });
         handle.draggable = true;
         handle.addEventListener("dragstart", e => {
           dragConfig = { containerId, config, from: index, onChange };
@@ -8729,6 +10096,125 @@
         list.appendChild(row);
       });
       bindHelpButtons(list);
+    }
+
+    function isPopupOptionsRow(key) {
+      return key === "bandPrices" || key === "mstrRainbowPrices";
+    }
+
+    function applyPopupBandDotOptions(row, item) {
+      ensurePopupItemOptions("btc", item);
+      const opts = item?.options || {};
+      const enabled = opts.showDots !== false;
+      if (!enabled) {
+        row.hideDot = true;
+        return row;
+      }
+      const size = Math.max(0.5, Number(opts.dotSize) || defaultPopupBandDotSettings.size);
+      const glowSize = Math.max(0, Number(opts.dotGlowSize) || defaultPopupBandDotSettings.glowSize);
+      const glowAlpha = Math.max(0, Math.min(1, Number(opts.dotGlowAlpha) || defaultPopupBandDotSettings.glowAlpha));
+      row.dotRadius = size;
+      row.dotGlowSize = glowSize;
+      row.dotGlowAlpha = glowAlpha;
+      row.dotGlowAlpha2 = Math.max(0, Math.min(1, glowAlpha * 0.66));
+      return row;
+    }
+
+    function ensurePopupItemOptions(mode, item) {
+      if (!item || !isPopupOptionsRow(item.key)) return;
+      if (!item.options) item.options = {};
+      if (!item.options.items) item.options.items = {};
+      if (item.key === "bandPrices") {
+        if (typeof item.options.shortenLabels !== "boolean") item.options.shortenLabels = false;
+        if (typeof item.options.showDots !== "boolean") item.options.showDots = true;
+        if (!Number.isFinite(Number(item.options.dotSize))) item.options.dotSize = defaultPopupBandDotSettings.size;
+        if (!Number.isFinite(Number(item.options.dotGlowSize))) item.options.dotGlowSize = defaultPopupBandDotSettings.glowSize;
+        if (!Number.isFinite(Number(item.options.dotGlowAlpha))) item.options.dotGlowAlpha = defaultPopupBandDotSettings.glowAlpha;
+        getBtcBandOptionDefs(item).forEach(opt => {
+          if (typeof item.options.items[opt.id] !== "boolean") item.options.items[opt.id] = true;
+        });
+      }
+      if (item.key === "mstrRainbowPrices") {
+        if (!item.options.labelStyle) item.options.labelStyle = "name";
+        if (typeof item.options.shortenLabels !== "boolean") item.options.shortenLabels = false;
+        if (typeof item.options.showDots !== "boolean") item.options.showDots = true;
+        if (!Number.isFinite(Number(item.options.dotSize))) item.options.dotSize = defaultPopupBandDotSettings.size;
+        if (!Number.isFinite(Number(item.options.dotGlowSize))) item.options.dotGlowSize = defaultPopupBandDotSettings.glowSize;
+        if (!Number.isFinite(Number(item.options.dotGlowAlpha))) item.options.dotGlowAlpha = defaultPopupBandDotSettings.glowAlpha;
+        getMstrBandOptionDefs(item).forEach(opt => {
+          if (typeof item.options.items[opt.id] !== "boolean") item.options.items[opt.id] = true;
+        });
+      }
+      if (typeof item.options.expanded !== "boolean") item.options.expanded = false;
+    }
+
+    function renderPopupOptionsSubmenu(mode, item) {
+      const defs = item.key === "bandPrices" ? getBtcBandOptionDefs(item) : getMstrBandOptionDefs(item);
+      const dotOptions = `
+        <div class="submenu-row">
+          <label><input type="checkbox" data-option-key="showDots" ${item.options.showDots !== false ? "checked" : ""}>Show band dots</label>
+        </div>
+        <div class="dot-options-grid">
+          <div class="dot-option-block">
+            <span>Dot size</span>
+            <input type="number" data-option-key="dotSize" value="${escapeHtml(item.options.dotSize ?? defaultPopupBandDotSettings.size)}" min="0.5" max="8" step="0.1" ${item.options.showDots === false ? "disabled" : ""}>
+          </div>
+          <div class="dot-option-block">
+            <span>Dot glow size</span>
+            <input type="number" data-option-key="dotGlowSize" value="${escapeHtml(item.options.dotGlowSize ?? defaultPopupBandDotSettings.glowSize)}" min="0" max="14" step="0.1" ${item.options.showDots === false ? "disabled" : ""}>
+          </div>
+          <div class="dot-option-block">
+            <span>Dot glow transparency</span>
+            <input type="number" data-option-key="dotGlowAlpha" value="${escapeHtml(item.options.dotGlowAlpha ?? defaultPopupBandDotSettings.glowAlpha)}" min="0" max="1" step="0.01" ${item.options.showDots === false ? "disabled" : ""}>
+          </div>
+        </div>`;
+      const shortenRow = `
+        <div class="submenu-row">
+          <label><input type="checkbox" data-option-key="shortenLabels" ${item.options.shortenLabels ? "checked" : ""}>Shorten labels to first word</label>
+        </div>${dotOptions}`;
+      const labelStyle = item.key === "mstrRainbowPrices" ? `
+        <div class="submenu-row">
+          <span>Labels show</span>
+          <select data-option-key="labelStyle">
+            <option value="name" ${item.options.labelStyle === "name" ? "selected" : ""}>Band name</option>
+            <option value="mnav" ${item.options.labelStyle === "mnav" ? "selected" : ""}>mNAV</option>
+            <option value="both" ${item.options.labelStyle === "both" ? "selected" : ""}>Both</option>
+          </select>
+        </div>${shortenRow}` : shortenRow;
+      const rows = defs.map(opt => `
+        <div class="submenu-row">
+          <label><input type="checkbox" data-option-id="${escapeHtml(opt.id)}" ${item.options.items[opt.id] !== false ? "checked" : ""}>${escapeHtml(opt.label)}</label>
+        </div>`).join("");
+      return `<div class="row-options"><div class="submenu-grid">${labelStyle}${rows}</div></div>`;
+    }
+
+    function getBtcBandOptionDefs(item = null) {
+      const shorten = !!item?.options?.shortenLabels;
+      const highLabel = b => shorten ? shortenBandLabel(b.name, true) : `${cleanMstrBandName(b.name)} high`;
+      const lowLabel = b => shorten ? shortenBandLabel(b.name, true) : `${cleanMstrBandName(b.name)} low`;
+      const highs = bands.filter(b => b.visible && b.upper > 1).sort((a, b) => b.upper - a.upper).map(b => ({ id: `high:${b.name}`, label: highLabel(b) }));
+      const lowsBeforeBottom = bands.filter(b => b.visible && b.upper <= 1 && b.lower > getSettings().bottom).sort((a, b) => b.lower - a.lower).map(b => ({ id: `low:${b.name}`, label: lowLabel(b) }));
+      const lowsAfterBottom = bands.filter(b => b.visible && b.upper <= 1 && b.lower <= getSettings().bottom).sort((a, b) => b.lower - a.lower).map(b => ({ id: `low:${b.name}`, label: lowLabel(b) }));
+      return [...highs, { id: "fair", label: "Fair value" }, ...lowsBeforeBottom, { id: "bottom", label: "Bottom line" }, ...lowsAfterBottom];
+    }
+
+    function getMstrBandOptionDefs(item = null) {
+      if ((controls.mstrRainbowMode?.value || "mnav") === "btc") return getBtcBandOptionDefs(item);
+      const style = item?.options?.labelStyle || "name";
+      const shorten = !!item?.options?.shortenLabels;
+      const highs = mstrBands
+        .filter(b => b.visible && b.lower >= 1 && !String(b.name).toLowerCase().includes("fair"))
+        .sort((a, b) => b.upper - a.upper)
+        .map(b => ({ id: `high:${b.name}`, label: mstrBandDisplayLabel(b, "high", style, shorten) }));
+      const lows = mstrBands
+        .filter(b => b.visible && b.upper <= 1)
+        .sort((a, b) => b.lower - a.lower)
+        .map(b => ({ id: `low:${b.name}`, label: mstrBandDisplayLabel(b, "low", style, shorten) }));
+      return [...highs, { id: "fair", label: "Fair value" }, ...lows];
+    }
+
+    function popupOptionOn(item, id) {
+      return !item?.options?.items || item.options.items[id] !== false;
     }
 
     function metricValue(key) {
@@ -8769,6 +10255,11 @@
         case "terminalYield": return `${(ss.terminalYield * 100).toFixed(2)}%`;
         case "maxBps": return Math.round(ss.startBps * (ss.maxBtcHoldings / ss.startBtcHoldings)).toLocaleString();
         case "maxMnav": return ss.maxMnav.toFixed(2);
+        case "portfolioCurrent": { const p = interpolatedPortfolioAt(today.getTime()); return p ? formatMoney(p.totalValue) : "-"; }
+        case "portfolioEnd": { const p = portfolioRows.at(-1); return p ? `${formatMoney(p.totalValue)} (${formatDate(new Date(p.t), true)})` : "-"; }
+        case "portfolioBtcHoldings": { const p = interpolatedPortfolioAt(state.viewEndMs); return p ? p.btcHoldings.toLocaleString(undefined, { maximumFractionDigits: 8 }) : "-"; }
+        case "portfolioMstrShares": { const p = interpolatedPortfolioAt(state.viewEndMs); return p ? p.mstrShares.toLocaleString(undefined, { maximumFractionDigits: 4 }) : "-"; }
+        case "portfolioDca": { const p = interpolatedPortfolioAt(state.viewEndMs); return p ? formatMoney(p.totalDcaSpent) : "-"; }
         default: return "-";
       }
     }
@@ -8826,10 +10317,15 @@
         showCsv: controls.showCsv.checked,
         showAthAtl: controls.showAthAtl.checked,
         rainbowOpacity: controls.rainbowOpacity.value,
+        inflationAdjusted: controls.inflationAdjusted?.checked || false,
+        inflationRate: controls.inflationRate?.value || "3",
+        cycleProjectionMode: controls.cycleProjectionMode?.value || "interval",
         cycleAnchorDate: controls.cycleAnchorDate.value,
         cycleLabelMode: controls.cycleLabelMode.value,
         atlToAthDays: controls.atlToAthDays.value,
         athToAtlDays: controls.athToAtlDays.value,
+        halvingAtlOffsetDays: controls.halvingAtlOffsetDays?.value || "500",
+        halvingAthOffsetDays: controls.halvingAthOffsetDays?.value || "500",
         atlBandMultiplier: controls.atlBandMultiplier.value,
         athBandMultiplier: controls.athBandMultiplier.value,
         atlUsesPreviousAth: controls.atlUsesPreviousAth.checked,
@@ -8837,7 +10333,9 @@
         mstrBands,
         metrics: metricConfig,
         popup: popupConfig,
-        strategy: getStrategySettings()
+        popupPriceFormat: controls.popupPriceFormat?.value || "compact2",
+        strategy: getStrategySettings(),
+        portfolio: getPortfolioSettings()
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
@@ -8858,17 +10356,39 @@
           if (typeof data[k] === "boolean") controls[k].checked = data[k];
         });
         if (data.rainbowOpacity) controls.rainbowOpacity.value = data.rainbowOpacity;
+        if (typeof data.inflationAdjusted === "boolean" && controls.inflationAdjusted) controls.inflationAdjusted.checked = data.inflationAdjusted;
+        if (data.inflationRate && controls.inflationRate) { const r = Number(data.inflationRate); controls.inflationRate.value = Number.isFinite(r) && r > 0 && r < 1 ? String(r * 100) : data.inflationRate; }
+        if (data.cycleProjectionMode && controls.cycleProjectionMode) controls.cycleProjectionMode.value = data.cycleProjectionMode;
         if (data.cycleAnchorDate) controls.cycleAnchorDate.value = data.cycleAnchorDate;
         if (data.cycleLabelMode) controls.cycleLabelMode.value = data.cycleLabelMode;
         if (data.atlToAthDays) controls.atlToAthDays.value = data.atlToAthDays;
         if (data.athToAtlDays) controls.athToAtlDays.value = data.athToAtlDays;
+        if (data.halvingAtlOffsetDays && controls.halvingAtlOffsetDays) controls.halvingAtlOffsetDays.value = data.halvingAtlOffsetDays;
+        if (data.halvingAthOffsetDays && controls.halvingAthOffsetDays) controls.halvingAthOffsetDays.value = data.halvingAthOffsetDays;
         if (data.atlBandMultiplier) controls.atlBandMultiplier.value = data.atlBandMultiplier;
         if (data.athBandMultiplier) controls.athBandMultiplier.value = data.athBandMultiplier;
         if (typeof data.atlUsesPreviousAth === "boolean") controls.atlUsesPreviousAth.checked = data.atlUsesPreviousAth;
+        if (data.popupPriceFormat && controls.popupPriceFormat) controls.popupPriceFormat.value = data.popupPriceFormat;
         if (Array.isArray(data.bands)) bands = cloneBands(data.bands);
         if (Array.isArray(data.mstrBands)) mstrBands = cloneBands(data.mstrBands);
         if (data.metrics) metricConfig = normalizeConfig(defaultMetricConfig, data.metrics);
         if (data.popup) popupConfig = normalizeConfig(defaultPopupConfig, data.popup, true);
+        if (data.portfolio) {
+          const pmap = {
+            btcHoldings: "portfolioBtcHoldings",
+            mstrShares: "portfolioMstrShares",
+            btcDcaAmount: "portfolioBtcDcaAmount",
+            btcDcaFrequency: "portfolioBtcDcaFrequency",
+            btcDcaStart: "portfolioBtcDcaStart",
+            mstrDcaAmount: "portfolioMstrDcaAmount",
+            mstrDcaFrequency: "portfolioMstrDcaFrequency",
+            mstrDcaStart: "portfolioMstrDcaStart"
+          };
+          Object.entries(pmap).forEach(([k, id]) => {
+            if (data.portfolio[k] !== undefined) controls[id].value = data.portfolio[k];
+          });
+          formatCommaInputs();
+        }
         if (data.strategy) {
           const map = {
             baseMnav: "mnavBase",
@@ -8888,6 +10408,7 @@
           Object.entries(map).forEach(([k, id]) => {
             if (data.strategy[k] !== undefined) controls[id].value = data.strategy[k];
           });
+          formatCommaInputs();
           if (typeof data.strategy.showFair === "boolean" && controls.showMstrFair) controls.showMstrFair.checked = data.strategy.showFair;
         }
       } catch {}
@@ -8895,7 +10416,7 @@
 
     function exportPng() {
       const link = document.createElement("a");
-      link.download = activeMode === "mstr" ? "mstr-projection.png" : "bitcoin-power-law-chart.png";
+      link.download = activeMode === "mstr" ? "mstr-projection.png" : activeMode === "portfolio" ? "portfolio-projection.png" : "bitcoin-power-law-chart.png";
       link.href = canvas.toDataURL("image/png");
       link.click();
     }
@@ -8906,13 +10427,17 @@
         rows = ["date,type,btc_price,mnav,sats_per_share,mstr_price"].concat(strategyRows.map(p =>
           `${isoDate(new Date(p.t))},${p.type},${p.btcPrice.toFixed(2)},${p.mnav.toFixed(4)},${p.satsPerShare.toFixed(2)},${p.mstrPrice.toFixed(2)}`
         ));
+      } else if (activeMode === "portfolio") {
+        rows = ["date,btc_price,mstr_price,btc_holdings,mstr_shares,btc_holdings_value,mstr_shares_value,total_value,btc_dca_spend,mstr_dca_spend,total_dca_spend"].concat(portfolioRows.map(p =>
+          `${isoDate(new Date(p.t))},${p.btcPrice.toFixed(2)},${p.mstrPrice.toFixed(2)},${p.btcHoldings.toFixed(8)},${p.mstrShares.toFixed(6)},${p.btcValue.toFixed(2)},${p.mstrValue.toFixed(2)},${p.totalValue.toFixed(2)},${p.btcDcaSpent.toFixed(2)},${p.mstrDcaSpent.toFixed(2)},${p.totalDcaSpent.toFixed(2)}`
+        ));
       } else {
         const s = getSettings();
         rows = ["date,days_since_genesis,base,fair,bottom"].concat(modelCache.map(p =>
           `${isoDate(new Date(p.t))},${p.d.toFixed(2)},${p.base.toFixed(2)},${(p.base*s.fair).toFixed(2)},${(p.base*s.bottom).toFixed(2)}`
         ));
       }
-      downloadText(rows.join("\n"), activeMode === "mstr" ? "mstr-projection.csv" : "btc-power-law-model.csv", "text/csv");
+      downloadText(rows.join("\n"), activeMode === "mstr" ? "mstr-projection.csv" : activeMode === "portfolio" ? "portfolio-projection.csv" : "btc-power-law-model.csv", "text/csv");
     }
 
     function exportJson() {
@@ -8981,6 +10506,24 @@
       return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }).format(v);
     }
 
+    function formatPopupMoney(v) {
+      if (!Number.isFinite(v)) return "-";
+      const mode = controls.popupPriceFormat?.value || "compact2";
+      if (mode === "full") {
+        return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }).format(v);
+      }
+      if (mode === "compact0" || mode === "compact1" || mode === "compact2") {
+        const digits = mode === "compact0" ? 0 : mode === "compact1" ? 1 : 2;
+        return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: digits, minimumFractionDigits: digits }).format(v);
+      }
+      const abs = Math.abs(v);
+      if (abs < 1000) return formatMoney(v);
+      const unit = abs >= 1e12 ? 1e12 : abs >= 1e9 ? 1e9 : abs >= 1e6 ? 1e6 : 1e3;
+      const scaled = abs / unit;
+      const digits = scaled < 10 ? 3 : scaled < 100 ? 2 : scaled < 1000 ? 1 : 0;
+      return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: digits, minimumFractionDigits: digits }).format(v);
+    }
+
     function niceStep(raw) {
       const pow = Math.pow(10, Math.floor(Math.log10(raw)));
       const n = raw / pow;
@@ -8995,6 +10538,17 @@
       const g = (bigint >> 8) & 255;
       const b = bigint & 255;
       return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function colorToRgba(color, alpha) {
+      const value = String(color || "#ffffff").trim();
+      const rgba = value.match(/^rgba?\(([^)]+)\)$/i);
+      if (rgba) {
+        const parts = rgba[1].split(",").map(v => v.trim());
+        return `rgba(${parts[0] || 255},${parts[1] || 255},${parts[2] || 255},${alpha})`;
+      }
+      if (value[0] === "#") return hexToRgba(value, alpha);
+      return value;
     }
 
     function escapeHtml(value) {
