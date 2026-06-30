@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bitcoin Power Law MSTR Dashboard v27</title>
+  <title>Bitcoin Power Law MSTR Dashboard v28</title>
   <style>
     :root {
       --bg: #070a12;
@@ -759,28 +759,96 @@
 
     @media (max-width: 980px) {
       body { overflow: hidden; }
-      .app { height: 100dvh; padding: 5px 5px max(5px, env(safe-area-inset-bottom)); }
-      main { grid-template-rows: auto minmax(0, 1fr) auto; gap: 5px; }
+      .app {
+        height: 100dvh;
+        padding: 5px 5px max(5px, env(safe-area-inset-bottom));
+      }
+      main {
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: 6px;
+        height: 100%;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) main {
+        height: calc(100dvh - min(34dvh, 260px) - 10px - max(5px, env(safe-area-inset-bottom)));
+      }
       .app.settings-open .chart-card,
       .app.info-open .chart-card,
       .app.popup-window-open .chart-card { margin-right: 0; }
       .backdrop.open { display: block; }
       aside { top: 10px; right: 10px; bottom: 10px; width: min(390px, calc(100vw - 20px)); }
-      .header { padding: 7px 8px; gap: 6px; }
-      .brand-wrap { gap: 7px; flex-wrap: wrap; }
-      .brand-mark { width: 32px; height: 32px; font-size: 21px; }
-      .brand-text { font-size: clamp(17px, 5.7vw, 22px); white-space: normal; }
-      .mode-tab { padding: 7px 8px; font-size: 11px; }
-      .actions { gap: 5px; }
-      .icon-btn { width: 36px; height: 36px; border-radius: 10px; }
-      .icon-btn svg { width: 21px; height: 21px; }
-      .tooltip {
-        min-width: 0;
-        max-width: calc(100% - 20px);
-        max-height: min(54dvh, 360px);
-        pointer-events: auto;
-        font-size: 12px;
+      #popupWindow {
+        left: 5px;
+        right: 5px;
+        top: auto;
+        bottom: max(5px, env(safe-area-inset-bottom));
+        width: auto;
+        height: min(34dvh, 260px);
+        min-height: 154px;
+        max-height: 260px;
+        border-radius: 16px;
+        z-index: 27;
+        transform: translateY(calc(100% + 28px));
       }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) #popupWindow {
+        transform: translateY(0);
+      }
+      .app.mobile-popup-mode.settings-open #popupWindow,
+      .app.mobile-popup-mode.info-open #popupWindow,
+      .app.mobile-popup-mode:not(.popup-window-open) #popupWindow {
+        transform: translateY(calc(100% + 28px));
+      }
+      #popupWindow .popup-window-head {
+        padding: 8px 12px 6px;
+        min-height: 34px;
+      }
+      #popupWindow .popup-window-head h2 {
+        font-size: 13px;
+        line-height: 1.1;
+      }
+      #popupWindow .popup-window-body {
+        padding: 7px 12px 12px;
+        font-size: 12px;
+        overflow: auto;
+        max-height: calc(100% - 35px);
+      }
+      #popupWindow .popup-window-body .date { margin-bottom: 5px; }
+      #popupWindow .popup-window-body .row { padding: 1px 0; gap: 10px; }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .metric-toggle,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .status-bar {
+        display: none !important;
+      }
+      .header {
+        padding: 6px;
+        gap: 6px;
+        grid-template-columns: 1fr;
+      }
+      .brand-wrap {
+        gap: 6px;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+      }
+      .brand { gap: 7px; }
+      .brand-mark { width: 30px; height: 30px; font-size: 20px; }
+      .brand-text {
+        font-size: clamp(16px, 4.7vw, 20px);
+        white-space: nowrap;
+        letter-spacing: -.055em;
+      }
+      .mode-tabs { flex: 0 0 auto; }
+      .mode-tab { padding: 6px 8px; font-size: 11px; }
+      .actions {
+        gap: 5px;
+        justify-content: flex-start;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 1px;
+      }
+      .actions::-webkit-scrollbar { display: none; }
+      .icon-btn { width: 35px; height: 35px; border-radius: 10px; flex: 0 0 auto; }
+      .icon-btn svg { width: 20px; height: 20px; }
+      .tooltip { display: none !important; }
       .tooltip-close { display: inline-flex; align-items: center; justify-content: center; }
       .status-bar {
         display: none;
@@ -801,8 +869,8 @@
         display: inline-flex;
         justify-content: center;
         width: 100%;
-        min-height: 36px;
-        padding: 7px 10px;
+        min-height: 34px;
+        padding: 6px 10px;
         border-radius: 12px;
         font-size: 13px;
       }
@@ -1299,7 +1367,7 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV27";
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV28";
     const PRELOADED_CSV = String.raw`2026-06-25,59721.68
 2026-06-24,60995.13
 2026-06-23,62668.02
@@ -7803,7 +7871,7 @@
       popupMode = ["follow", "anchor", "window"].includes(mode) ? mode : "window";
       tooltipAnchorMode = popupMode === "anchor";
       if (tooltipAnchorMode && !tooltipCorner) tooltipCorner = "bottomRight";
-      app.classList.toggle("popup-window-open", popupMode === "window");
+      app.classList.toggle("popup-window-open", popupMode === "window" || isMobilePopupMode());
       const btn = $("toggleTooltipAnchor");
       if (btn) {
         btn.classList.remove("active", "popup-follow", "popup-anchor");
@@ -7813,7 +7881,8 @@
       }
       document.querySelectorAll("[data-popup-mode]").forEach(b => b.classList.toggle("active", b.dataset.popupMode === popupMode));
       $("popupModeMenu")?.classList.remove("open");
-      if (popupMode === "window") ensurePopupWindowHover(true);
+      if (popupMode === "window" || isMobilePopupMode()) ensurePopupWindowHover(true);
+      updateResponsiveMode();
       saveSettings();
       if (redraw) { resize(); autoY(); updateMetrics(); draw(); }
     }
@@ -7823,7 +7892,13 @@
     }
 
     function updateResponsiveMode() {
-      app.classList.toggle("mobile-popup-mode", isMobilePopupMode());
+      const mobile = isMobilePopupMode();
+      app.classList.toggle("mobile-popup-mode", mobile);
+      if (mobile && !app.classList.contains("settings-open") && !app.classList.contains("info-open")) {
+        app.classList.add("popup-window-open");
+      } else {
+        app.classList.toggle("popup-window-open", popupMode === "window" && !app.classList.contains("settings-open") && !app.classList.contains("info-open"));
+      }
     }
 
     function queueDeferredLabel(x, y, text, opts = {}) {
@@ -7875,8 +7950,9 @@
     }
 
     function ensurePopupWindowHover(force = false) {
-      if (popupMode !== "window" || isMobilePopupMode()) return;
+      if (popupMode !== "window" && !isMobilePopupMode()) return;
       if (force || !hover) hover = defaultHoverPoint();
+      if (isMobilePopupMode() && !pinnedHover) pinnedHover = true;
     }
 
     function hoverFromPinnedData() {
@@ -7920,7 +7996,7 @@
       $("infoPanel").classList.remove("open");
       $("backdrop").classList.remove("open");
       app.classList.remove("settings-open", "info-open");
-      if (popupMode === "window") app.classList.add("popup-window-open");
+      updateResponsiveMode();
       if (redraw) setTimeout(() => { resize(); ensurePopupWindowHover(true); draw(); }, 240);
     }
 
@@ -8339,7 +8415,7 @@
       padding = rect.width < 700
         ? { left: 60, right: 18, top: 24, bottom: mobileMode ? 30 : 54 }
         : { left: 78, right: 28, top: 28, bottom: mobileMode ? 34 : 58 };
-      const availableHeight = mobileMode ? rect.height * 0.5 : rect.height;
+      const availableHeight = rect.height;
       plot = {
         x: padding.left,
         y: padding.top,
@@ -8467,7 +8543,7 @@
       else drawBtcChart();
       ctx.restore();
       drawAxes();
-      if (isMobilePopupMode() && !hover) ensureMobileHover();
+      if (isMobilePopupMode() && !hover) ensurePopupWindowHover();
       if (popupMode === "window" && !hover) ensurePopupWindowHover();
       if (hover) drawHover();
       flushDeferredLabels();
@@ -9193,7 +9269,7 @@
       const rows = activeMode === "mstr" ? strategyPopupRows(t, yVal) : activeMode === "portfolio" ? portfolioPopupRows(t, yVal) : btcPopupRows(t, yVal);
       drawPopupDots(rows, t);
       const mobileMode = isMobilePopupMode();
-      if (popupMode === "window" && !mobileMode) {
+      if (popupMode === "window" || mobileMode) {
         tooltip.style.display = "none";
         updatePopupWindow(rows, t);
         return;
@@ -9974,7 +10050,7 @@
         }
         updateMetrics();
         draw();
-      } else if (!pinnedHover || isMobilePopupMode()) {
+      } else if (!pinnedHover) {
         hover = { x, y };
         draw();
       }
