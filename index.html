@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bitcoin Power Law MSTR Dashboard v28</title>
+  <title>Bitcoin Power Law MSTR Dashboard v29</title>
   <style>
     :root {
       --bg: #070a12;
@@ -878,6 +878,176 @@
       .metric .label { font-size: 9px; margin-bottom: 3px; }
       .metric .value { font-size: 13px; }
     }
+  
+
+    /* Compact/mobile layout override: keep desktop layout unchanged above 1100px. */
+    @media (max-width: 1100px) {
+      :root { --compact-data-height: clamp(178px, 34dvh, 270px); }
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      .app {
+        width: 100vw;
+        height: 100dvh;
+        padding: 5px 5px max(5px, env(safe-area-inset-bottom));
+        overflow: hidden;
+      }
+      main {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: 100% !important;
+        margin: 0 !important;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        gap: 6px;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) main {
+        height: calc(100dvh - var(--compact-data-height) - 16px - max(5px, env(safe-area-inset-bottom))) !important;
+      }
+      .header {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+        padding: 6px !important;
+        overflow: visible !important;
+        z-index: 120 !important;
+      }
+      .brand-wrap {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 7px !important;
+        min-width: 0 !important;
+      }
+      .brand {
+        flex: 1 1 210px !important;
+        min-width: 0 !important;
+        gap: 7px !important;
+      }
+      .brand-mark {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 20px !important;
+      }
+      .brand-text {
+        font-size: clamp(16px, 5.2vw, 22px) !important;
+        line-height: .92 !important;
+        letter-spacing: -.055em !important;
+        white-space: normal !important;
+        max-width: 260px !important;
+      }
+      .mode-tabs {
+        flex: 0 1 auto !important;
+        max-width: 100% !important;
+        order: 2;
+      }
+      .mode-tab {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+      }
+      .actions {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        gap: 5px !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+      .icon-btn {
+        width: 35px !important;
+        height: 35px !important;
+        border-radius: 10px !important;
+        flex: 0 0 auto !important;
+      }
+      .icon-btn svg {
+        width: 20px !important;
+        height: 20px !important;
+      }
+      .chart-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+      }
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+      .tooltip {
+        display: none !important;
+      }
+      #popupWindow {
+        position: fixed !important;
+        left: 5px !important;
+        right: 5px !important;
+        top: auto !important;
+        bottom: max(5px, env(safe-area-inset-bottom)) !important;
+        width: auto !important;
+        max-width: none !important;
+        height: var(--compact-data-height) !important;
+        min-height: 0 !important;
+        max-height: var(--compact-data-height) !important;
+        border-radius: 16px !important;
+        z-index: 28 !important;
+        overflow: hidden !important;
+        transform: translateY(calc(100% + 28px)) !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) #popupWindow {
+        transform: translateY(0) !important;
+      }
+      .app.mobile-popup-mode.settings-open #popupWindow,
+      .app.mobile-popup-mode.info-open #popupWindow,
+      .app.mobile-popup-mode:not(.popup-window-open) #popupWindow {
+        transform: translateY(calc(100% + 28px)) !important;
+      }
+      #popupWindow .popup-window-head {
+        padding: 8px 12px 6px !important;
+        min-height: 34px !important;
+      }
+      #popupWindow .popup-window-head h2 {
+        font-size: 13px !important;
+        line-height: 1.1 !important;
+      }
+      #popupWindow .popup-window-body {
+        height: calc(100% - 35px) !important;
+        max-height: none !important;
+        overflow: auto !important;
+        padding: 7px 12px 12px !important;
+        font-size: 12px !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .metric-toggle,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .status-bar {
+        display: none !important;
+      }
+      .popup-mode-menu {
+        position: fixed !important;
+        right: 8px !important;
+        top: 58px !important;
+        z-index: 9999 !important;
+      }
+      #settingsPanel,
+      #infoPanel {
+        top: 5px !important;
+        right: 5px !important;
+        bottom: max(5px, env(safe-area-inset-bottom)) !important;
+        width: calc(100vw - 10px) !important;
+        max-width: none !important;
+        z-index: 35 !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1367,7 +1537,7 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV28";
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV29";
     const PRELOADED_CSV = String.raw`2026-06-25,59721.68
 2026-06-24,60995.13
 2026-06-23,62668.02
@@ -7888,7 +8058,7 @@
     }
 
     function isMobilePopupMode() {
-      return window.innerWidth <= 900 || (window.innerWidth <= 1100 && window.innerHeight > window.innerWidth);
+      return window.innerWidth <= 1100;
     }
 
     function updateResponsiveMode() {
