@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Bitcoin Power Law MSTR Dashboard v36</title>
+  <title>Bitcoin Power Law MSTR Dashboard v37</title>
   <!-- Bitcoin Power Law icons / PWA metadata -->
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -1175,7 +1175,7 @@
       top: var(--floating-menu-top, auto);
       z-index: 10070;
       display: none;
-      width: min(292px, calc(100vw - 16px));
+      width: min(318px, calc(100vw - 16px));
       padding: 10px;
       border: 1px solid rgba(255,255,255,.16);
       border-radius: 14px;
@@ -1199,6 +1199,25 @@
       font-size: 13px;
       font-weight: 850;
       letter-spacing: .01em;
+    }
+    .date-calendar-selects {
+      display: grid;
+      grid-template-columns: 1.25fr .9fr;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+    .date-calendar-select {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(6,9,16,.92);
+      color: #e7efff;
+      border-radius: 9px;
+      padding: 7px 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color-scheme: dark;
     }
     .date-calendar-nav {
       border: 1px solid rgba(255,255,255,.13);
@@ -2143,7 +2162,7 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV36";
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV37";
     const PRELOADED_CSV = String.raw`2026-06-25,59721.68
 2026-06-24,60995.13
 2026-06-23,62668.02
@@ -8359,6 +8378,7 @@
     let calendarViewDate = null;
     let calendarSelectedDate = null;
     let calendarSuppressCloseUntil = 0;
+    let calendarInteractionStamp = 0;
 
     const defaultPopupBandDotSettings = { enabled: true, size: 1.5, glowSize: 2.5, glowAlpha: 0.15 };
     let popupBandDotSettings = { ...defaultPopupBandDotSettings };
@@ -8465,42 +8485,77 @@
       closeDateCalendar(true);
       jumpToToday();
     });
+    function stopCalendarEvent(e) {
+      e.preventDefault?.();
+      e.stopPropagation?.();
+      e.stopImmediatePropagation?.();
+    }
+
     function handleSelectDateOpen(e) {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e) stopCalendarEvent(e);
+      const now = Date.now();
+      if (now - calendarInteractionStamp < 180) return;
+      calendarInteractionStamp = now;
       const pinnedT = pinnedHoverData?.t;
       const hoverT = hover ? pxToX(hover.x) : NaN;
       const baseT = Number.isFinite(pinnedT) ? pinnedT : Number.isFinite(hoverT) ? hoverT : today.getTime();
       const baseDate = new Date(baseT);
       closeDateMenu();
-      openDateCalendar(baseDate);
+      requestAnimationFrame(() => openDateCalendar(baseDate));
     }
-    $("dateMenuSelect")?.addEventListener("pointerdown", handleSelectDateOpen, { passive: false });
-    $("dateMenuSelect")?.addEventListener("click", handleSelectDateOpen);
-    document.addEventListener("pointerdown", e => {
-      if (e.target.closest("#dateMenuSelect")) handleSelectDateOpen(e);
-    }, { passive: false });
+    ["pointerdown", "touchend", "click"].forEach(type => {
+      $("dateMenuSelect")?.addEventListener(type, handleSelectDateOpen, { passive: false });
+      document.addEventListener(type, e => {
+        if (e.target.closest?.("#dateMenuSelect")) handleSelectDateOpen(e);
+      }, { passive: false, capture: true });
+    });
+
     function handleDateCalendarAction(e) {
-      e.stopPropagation();
-      const nav = e.target.closest("[data-calendar-nav]");
+      const target = e.target;
+      if (!target?.closest?.("#dateCalendar")) return;
+      const nav = target.closest("[data-calendar-nav]");
+      const day = target.closest("[data-calendar-date]");
+      if (!nav && !day) {
+        e.stopPropagation?.();
+        return;
+      }
+      stopCalendarEvent(e);
+      const now = Date.now();
+      if (now - calendarInteractionStamp < 120) return;
+      calendarInteractionStamp = now;
       if (nav) {
-        e.preventDefault();
         const step = Number(nav.dataset.calendarNav) || 0;
         calendarViewDate = new Date(Date.UTC(calendarViewDate.getUTCFullYear(), calendarViewDate.getUTCMonth() + step, 1));
         renderDateCalendar(calendarSelectedDate || calendarViewDate);
         positionDateCalendar();
         return;
       }
-      const day = e.target.closest("[data-calendar-date]");
       if (day) {
-        e.preventDefault();
         const parsed = parseDate(day.dataset.calendarDate);
         if (parsed) jumpToDate(parsed);
         closeDateCalendar(true);
       }
     }
-    $("dateCalendar")?.addEventListener("pointerdown", handleDateCalendarAction, { passive: false });
-    $("dateCalendar")?.addEventListener("click", handleDateCalendarAction);
+    ["pointerdown", "touchend", "click"].forEach(type => {
+      $("dateCalendar")?.addEventListener(type, handleDateCalendarAction, { passive: false });
+      document.addEventListener(type, e => {
+        if (e.target.closest?.("#dateCalendar")) handleDateCalendarAction(e);
+      }, { passive: false, capture: true });
+    });
+    $("dateCalendar")?.addEventListener("change", e => {
+      const monthSelect = e.target.closest?.("[data-calendar-month]");
+      const yearSelect = e.target.closest?.("[data-calendar-year]");
+      if (!monthSelect && !yearSelect) return;
+      e.stopPropagation();
+      const current = calendarViewDate || startOfDayUTC(today);
+      const month = monthSelect ? Number(monthSelect.value) : current.getUTCMonth();
+      const year = yearSelect ? Number(yearSelect.value) : current.getUTCFullYear();
+      if (Number.isFinite(month) && Number.isFinite(year)) {
+        calendarViewDate = new Date(Date.UTC(year, month, 1));
+        renderDateCalendar(calendarSelectedDate || calendarViewDate);
+        positionDateCalendar();
+      }
+    });
     $("jumpDateInput").addEventListener("change", () => jumpToDate(parseDate($("jumpDateInput").value)));
     $("toggleInflation")?.addEventListener("click", () => { controls.inflationAdjusted.checked = !controls.inflationAdjusted.checked; recompute(); });
     $("toggleTooltipAnchor")?.addEventListener("click", togglePopupModeMenu);
@@ -8739,7 +8794,7 @@
       if (!pop || !btn) return;
       const btnRect = btn.getBoundingClientRect();
       const margin = 8;
-      const w = Math.min(292, window.innerWidth - margin * 2);
+      const w = Math.min(318, window.innerWidth - margin * 2);
       pop.style.setProperty("width", `${w}px`, "important");
       // Keep the picker aligned to the calendar button, but clamp it inside the viewport.
       let left = btnRect.left + btnRect.width / 2 - w / 2;
@@ -8791,8 +8846,13 @@
       if (!calendarViewDate) calendarViewDate = new Date(Date.UTC(selected.getUTCFullYear(), selected.getUTCMonth(), 1));
       const year = calendarViewDate.getUTCFullYear();
       const month = calendarViewDate.getUTCMonth();
-      const title = calendarViewDate.toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
       const first = new Date(Date.UTC(year, month, 1));
+      const monthNames = Array.from({ length: 12 }, (_, i) => new Date(Date.UTC(2024, i, 1)).toLocaleDateString(undefined, { month: "long", timeZone: "UTC" }));
+      const minYear = GENESIS.getUTCFullYear();
+      const maxYear = Math.max(addYears(today, Number(controls.yearsAhead?.value || 50)).getUTCFullYear(), year + 5);
+      const monthOptions = monthNames.map((name, i) => `<option value="${i}" ${i === month ? "selected" : ""}>${escapeHtml(name)}</option>`).join("");
+      let yearOptions = "";
+      for (let y = minYear; y <= maxYear; y++) yearOptions += `<option value="${y}" ${y === year ? "selected" : ""}>${y}</option>`;
       const start = new Date(Date.UTC(year, month, 1 - first.getUTCDay()));
       const todayIso = isoDate(startOfDayUTC(today));
       const selectedIso = isoDate(selected);
@@ -8810,7 +8870,10 @@
       pop.innerHTML = `
         <div class="date-calendar-head">
           <button class="date-calendar-nav" type="button" data-calendar-nav="-1" aria-label="Previous month">‹</button>
-          <div class="date-calendar-title">${escapeHtml(title)}</div>
+          <div class="date-calendar-selects">
+            <select class="date-calendar-select" data-calendar-month aria-label="Select month">${monthOptions}</select>
+            <select class="date-calendar-select" data-calendar-year aria-label="Select year">${yearOptions}</select>
+          </div>
           <button class="date-calendar-nav" type="button" data-calendar-nav="1" aria-label="Next month">›</button>
         </div>
         <div class="date-calendar-weekdays">${week.map(d => `<span>${d}</span>`).join("")}</div>
@@ -8913,6 +8976,7 @@
           return;
         }
         if (isChartTarget(event.target)) return;
+        if (event.target?.closest?.("#dateCalendar, #dateMenu, #mobileModeMenu, #popupModeMenu")) return;
         if (!isScrollableTarget(event.target)) event.preventDefault();
       }, { passive: false });
 
