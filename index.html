@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Bitcoin Power Law MSTR Dashboard v33</title>
+  <title>Bitcoin Power Law MSTR Dashboard v35</title>
   <!-- Bitcoin Power Law icons / PWA metadata -->
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -170,6 +170,45 @@
       color: #fff;
       box-shadow: inset 0 0 0 1px rgba(247,147,26,.30);
     }
+    .mode-menu-wrap { position: relative; display: none; }
+    .mobile-mode-button {
+      min-width: 104px;
+      height: 36px;
+      padding: 0 12px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-weight: 850;
+    }
+    .mobile-mode-button .chev { font-size: 11px; opacity: .8; }
+    .mode-select-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 10050;
+      display: none;
+      min-width: 132px;
+      padding: 6px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      background: rgba(13,18,31,.98);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .mode-select-menu.open { display: grid; gap: 5px; }
+    .mode-select-option {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      padding: 8px 10px;
+      color: #e7efff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .mode-select-option:hover, .mode-select-option.active { background: rgba(247,147,26,.18); }
     .actions {
       display: flex;
       gap: 7px;
@@ -1110,8 +1149,98 @@
       font-size: 12px;
       font-weight: 750;
     }
+    .date-picker-label {
+      position: relative;
+      display: block;
+      overflow: hidden;
+    }
+    .date-menu-date-native {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      color-scheme: dark;
+      border: 0;
+      padding: 0;
+      margin: 0;
+    }
     .date-menu-option:hover, .popup-mode-option:hover, .popup-mode-option.active {
       background: rgba(122,167,255,.18);
+    }
+    .date-calendar-popover {
+      position: fixed;
+      left: var(--floating-menu-left, auto);
+      top: var(--floating-menu-top, auto);
+      z-index: 10070;
+      display: none;
+      width: 260px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 14px;
+      background: rgba(13,18,31,.985);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      color: #e7efff;
+      user-select: none;
+    }
+    .date-calendar-popover.open { display: block; }
+    .date-calendar-head {
+      display: grid;
+      grid-template-columns: 34px 1fr 34px;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .date-calendar-title {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: .01em;
+    }
+    .date-calendar-nav {
+      border: 1px solid rgba(255,255,255,.13);
+      background: rgba(255,255,255,.05);
+      color: #dbe6ff;
+      border-radius: 9px;
+      width: 34px;
+      height: 30px;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .date-calendar-weekdays,
+    .date-calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .date-calendar-weekdays span {
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+      padding: 3px 0 5px;
+    }
+    .date-calendar-day {
+      border: 1px solid transparent;
+      background: transparent;
+      color: #dbe6ff;
+      height: 30px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .date-calendar-day:hover { background: rgba(122,167,255,.18); }
+    .date-calendar-day.muted { color: rgba(219,230,255,.38); }
+    .date-calendar-day.today { border-color: rgba(255,255,255,.42); }
+    .date-calendar-day.selected {
+      background: rgba(122,167,255,.28);
+      border-color: rgba(122,167,255,.78);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(122,167,255,.22);
     }
     .icon-btn svg { overflow: visible; }
 
@@ -1244,7 +1373,9 @@
 
     /* v31 compact/menu polish */
     .date-menu,
-    .popup-mode-menu {
+    .date-calendar-popover,
+    .popup-mode-menu,
+    .mode-select-menu {
       position: fixed !important;
       left: var(--floating-menu-left, auto) !important;
       top: var(--floating-menu-top, auto) !important;
@@ -1425,9 +1556,79 @@
       }
       .app.mobile-popup-mode .backdrop.open { z-index: 9990 !important; }
       .app.mobile-popup-mode .date-menu,
-      .app.mobile-popup-mode .popup-mode-menu {
-        z-index: 10050 !important;
+      .app.mobile-popup-mode .date-calendar-popover,
+      .app.mobile-popup-mode .popup-mode-menu,
+      .app.mobile-popup-mode .mode-select-menu {
+        z-index: 10070 !important;
       }
+    }
+
+  
+
+    /* v35 mobile chart-mode menu and label/date-picker polish */
+    @media (max-width: 1100px) {
+      .app.mobile-popup-mode .mode-tabs,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .mode-tabs,
+      .app.mobile-popup-mode.settings-open .mode-tabs,
+      .app.mobile-popup-mode.info-open .mode-tabs {
+        display: none !important;
+      }
+      .app.mobile-popup-mode .mode-menu-wrap,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .mode-menu-wrap,
+      .app.mobile-popup-mode.settings-open .mode-menu-wrap,
+      .app.mobile-popup-mode.info-open .mode-menu-wrap {
+        display: inline-grid !important;
+        order: 2 !important;
+        flex: 0 0 auto !important;
+      }
+      .app.mobile-popup-mode .brand-wrap,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .brand-wrap,
+      .app.mobile-popup-mode.settings-open .brand-wrap,
+      .app.mobile-popup-mode.info-open .brand-wrap {
+        justify-content: center !important;
+      }
+      .app.mobile-popup-mode .actions,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .actions,
+      .app.mobile-popup-mode.settings-open .actions,
+      .app.mobile-popup-mode.info-open .actions {
+        flex-wrap: nowrap !important;
+        justify-content: center !important;
+      }
+      .app.mobile-popup-mode .header,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .header,
+      .app.mobile-popup-mode.settings-open .header,
+      .app.mobile-popup-mode.info-open .header {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 6px !important;
+      }
+      .app.mobile-popup-mode .brand-wrap,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .brand-wrap,
+      .app.mobile-popup-mode.settings-open .brand-wrap,
+      .app.mobile-popup-mode.info-open .brand-wrap {
+        order: 1 !important;
+        width: auto !important;
+        flex: 0 0 auto !important;
+      }
+      .app.mobile-popup-mode .actions,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .actions,
+      .app.mobile-popup-mode.settings-open .actions,
+      .app.mobile-popup-mode.info-open .actions {
+        order: 2 !important;
+        width: auto !important;
+        flex: 0 0 auto !important;
+        flex-wrap: nowrap !important;
+        justify-content: center !important;
+      }
+      .app.mobile-popup-mode .mobile-mode-button {
+        min-width: 96px !important;
+        height: 34px !important;
+        padding: 0 10px !important;
+      }
+      .app.mobile-popup-mode .mode-select-menu { z-index: 10060 !important; }
     }
 
   </style>
@@ -1448,6 +1649,14 @@
             <button class="mode-tab" data-mode="mstr">MSTR</button>
             <button class="mode-tab" data-mode="portfolio">Portfolio</button>
           </div>
+          <div class="mode-menu-wrap" aria-label="Chart tab menu">
+            <button class="btn mobile-mode-button" id="mobileModeButton" type="button" aria-label="Chart tab menu"><span id="mobileModeLabel">BTC</span><span class="chev">▾</span></button>
+            <div class="mode-select-menu" id="mobileModeMenu" role="menu" aria-label="Chart tab menu">
+              <button class="mode-select-option active" data-mobile-mode="btc" type="button">BTC</button>
+              <button class="mode-select-option" data-mobile-mode="mstr" type="button">MSTR</button>
+              <button class="mode-select-option" data-mobile-mode="portfolio" type="button">Portfolio</button>
+            </div>
+          </div>
         </div>
         <div class="actions">
           <button class="btn icon-btn" id="openSettings" title="Settings" aria-label="Settings">
@@ -1463,8 +1672,8 @@
             <div class="date-menu" id="dateMenu" role="menu" aria-label="Date menu">
               <button class="date-menu-option" id="dateMenuToday" type="button">Today</button>
               <button class="date-menu-option" id="dateMenuSelect" type="button">Select Date</button>
-              <input id="dateMenuInput" class="date-menu-date" type="date" aria-label="Select chart date">
             </div>
+            <div class="date-calendar-popover" id="dateCalendar" role="dialog" aria-label="Select chart date"></div>
           </div>
           <button class="btn icon-btn" id="toggleInflation" title="Inflation-adjust chart" aria-label="Inflation-adjust chart">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 18.5h15"/><path d="M5 18.5V6"/><path d="M7.5 15.5l4-5 3.2 3.2 4.8-6.2"/><path d="M16.4 7.5h3.1v3.1"/></svg>
@@ -1586,6 +1795,16 @@
             <select id="priceScale">
               <option value="log" selected>Logarithmic scale</option>
               <option value="linear">Linear scale</option>
+            </select>
+          </div>
+          <div class="control" style="margin-top:10px">
+            <label class="label-row" for="chartLabelFormat">Chart label display <button class="help" data-help="Controls the price labels drawn beside ATH/ATL/RECOVER projection dots on the chart. Smart compact keeps labels short, such as $2.1M, $23.4M, or $365M.">?</button></label>
+            <select id="chartLabelFormat">
+              <option value="smart3" selected>Smart compact, 3 digits</option>
+              <option value="compact0">Compact, no decimals</option>
+              <option value="compact1">Compact, 1 decimal</option>
+              <option value="compact2">Compact, 2 decimals</option>
+              <option value="full">Unabbreviated</option>
             </select>
           </div>
           <div class="toggles">
@@ -1762,13 +1981,13 @@
           <div class="panel-title" style="margin-top:8px"><h2>BTC DCA</h2></div>
           <div class="row-2">
             <div class="control"><label for="portfolioBtcDcaAmount">BTC DCA amount ($)</label><input id="portfolioBtcDcaAmount" type="text" value="0" inputmode="decimal"></div>
-            <div class="control"><label for="portfolioBtcDcaFrequency">BTC DCA frequency</label><select id="portfolioBtcDcaFrequency"><option value="none" selected>Off</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+            <div class="control"><label for="portfolioBtcDcaFrequency">BTC DCA frequency</label><select id="portfolioBtcDcaFrequency"><option value="none" selected>Off</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly">Monthly</option></select></div>
           </div>
           <div class="control"><label for="portfolioBtcDcaStart">BTC DCA start date</label><input id="portfolioBtcDcaStart" type="date" value="2026-06-24"></div>
           <div class="panel-title" style="margin-top:8px"><h2>MSTR DCA</h2></div>
           <div class="row-2">
             <div class="control"><label for="portfolioMstrDcaAmount">MSTR DCA amount ($)</label><input id="portfolioMstrDcaAmount" type="text" value="0" inputmode="decimal"></div>
-            <div class="control"><label for="portfolioMstrDcaFrequency">MSTR DCA frequency</label><select id="portfolioMstrDcaFrequency"><option value="none" selected>Off</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+            <div class="control"><label for="portfolioMstrDcaFrequency">MSTR DCA frequency</label><select id="portfolioMstrDcaFrequency"><option value="none" selected>Off</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly">Monthly</option></select></div>
           </div>
           <div class="control"><label for="portfolioMstrDcaStart">MSTR DCA start date</label><input id="portfolioMstrDcaStart" type="date" value="2026-06-24"></div>
         </div>
@@ -1923,7 +2142,7 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV32";
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV35";
     const PRELOADED_CSV = String.raw`2026-06-25,59721.68
 2026-06-24,60995.13
 2026-06-23,62668.02
@@ -8057,6 +8276,7 @@
       bottomMultiplier: $("bottomMultiplier"),
       yearsAhead: $("yearsAhead"),
       priceScale: $("priceScale"),
+      chartLabelFormat: $("chartLabelFormat"),
       showBase: $("showBase"),
       showFair: $("showFair"),
       showBottom: $("showBottom"),
@@ -8193,6 +8413,24 @@
     document.querySelectorAll(".mode-tab").forEach(btn => {
       btn.addEventListener("click", () => setMode(btn.dataset.mode));
     });
+    $("mobileModeButton")?.addEventListener("click", e => {
+      e.stopPropagation();
+      const menu = $("mobileModeMenu");
+      const btn = $("mobileModeButton");
+      if (!menu || !btn) return;
+      $("dateMenu")?.classList.remove("open");
+      $("popupModeMenu")?.classList.remove("open");
+      const willOpen = !menu.classList.contains("open");
+      menu.classList.toggle("open", willOpen);
+      if (willOpen) positionFloatingMenu(menu, btn);
+    });
+    document.querySelectorAll("[data-mobile-mode]").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        setMode(btn.dataset.mobileMode);
+        $("mobileModeMenu")?.classList.remove("open");
+      });
+    });
 
     document.querySelectorAll(".settings-tab").forEach(btn => {
       btn.addEventListener("click", e => { if (e.target.closest(".help")) return; setSettingsPanel(btn.dataset.panel); });
@@ -8214,27 +8452,36 @@
       const menu = $("dateMenu");
       const willOpen = !menu?.classList.contains("open");
       $("popupModeMenu")?.classList.remove("open");
+      closeDateCalendar();
       if (willOpen) openDateMenu(false);
       else closeDateMenu();
     });
     $("dateMenuToday").addEventListener("click", () => {
       closeDateMenu();
+      closeDateCalendar();
       jumpToToday();
     });
-    $("dateMenuSelect").addEventListener("click", e => {
+    $("dateMenuSelect")?.addEventListener("click", e => {
       e.stopPropagation();
-      const input = $("dateMenuInput") || $("jumpDateInput");
-      if (input) input.value = isoDate(new Date(pxToX(hover?.x ?? xToPx(today.getTime()))));
-      openDateMenu(true);
-      setTimeout(() => {
-        try { if (input?.showPicker) input.showPicker(); else input?.focus(); }
-        catch { input?.focus(); }
-      }, 0);
-    });
-    $("dateMenuInput")?.addEventListener("change", () => {
-      const parsed = parseDate($("dateMenuInput").value);
-      if (parsed) jumpToDate(parsed);
+      const baseDate = new Date(pxToX(hover?.x ?? xToPx(today.getTime())));
       closeDateMenu();
+      openDateCalendar(baseDate);
+    });
+    $("dateCalendar")?.addEventListener("click", e => {
+      e.stopPropagation();
+      const nav = e.target.closest("[data-calendar-nav]");
+      if (nav) {
+        const step = Number(nav.dataset.calendarNav) || 0;
+        calendarViewDate = new Date(Date.UTC(calendarViewDate.getUTCFullYear(), calendarViewDate.getUTCMonth() + step, 1));
+        renderDateCalendar(calendarViewDate);
+        return;
+      }
+      const day = e.target.closest("[data-calendar-date]");
+      if (day) {
+        const parsed = parseDate(day.dataset.calendarDate);
+        if (parsed) jumpToDate(parsed);
+        closeDateCalendar();
+      }
     });
     $("jumpDateInput").addEventListener("change", () => jumpToDate(parseDate($("jumpDateInput").value)));
     $("toggleInflation")?.addEventListener("click", () => { controls.inflationAdjusted.checked = !controls.inflationAdjusted.checked; recompute(); });
@@ -8290,6 +8537,8 @@
       if (!e.target.closest(".help")) hideHelp();
       if (!e.target.closest(".popup-mode-wrap")) $("popupModeMenu")?.classList.remove("open");
       if (!e.target.closest(".date-menu-wrap")) closeDateMenu();
+      if (!e.target.closest(".date-menu-wrap") && !e.target.closest("#dateCalendar")) closeDateCalendar();
+      if (!e.target.closest(".mode-menu-wrap")) $("mobileModeMenu")?.classList.remove("open");
     });
     injectSettingHelp();
     bindHelpButtons(document);
@@ -8466,10 +8715,63 @@
       if (!menu) return;
       menu.classList.remove("open", "selecting-date");
     }
+    function openDateCalendar(baseDate) {
+      const pop = $("dateCalendar");
+      const btn = $("dateMenuButton");
+      if (!pop || !btn) return;
+      const base = baseDate && Number.isFinite(baseDate.getTime()) ? startOfDayUTC(baseDate) : startOfDayUTC(today);
+      calendarViewDate = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1));
+      renderDateCalendar(base);
+      pop.classList.add("open");
+      positionFloatingMenu(pop, btn);
+    }
+
+    function closeDateCalendar() {
+      const pop = $("dateCalendar");
+      if (!pop) return;
+      pop.classList.remove("open");
+    }
+
+    function renderDateCalendar(selectedDate) {
+      const pop = $("dateCalendar");
+      if (!pop) return;
+      const selected = selectedDate && Number.isFinite(selectedDate.getTime()) ? startOfDayUTC(selectedDate) : startOfDayUTC(today);
+      if (!calendarViewDate) calendarViewDate = new Date(Date.UTC(selected.getUTCFullYear(), selected.getUTCMonth(), 1));
+      const year = calendarViewDate.getUTCFullYear();
+      const month = calendarViewDate.getUTCMonth();
+      const title = calendarViewDate.toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
+      const first = new Date(Date.UTC(year, month, 1));
+      const start = new Date(Date.UTC(year, month, 1 - first.getUTCDay()));
+      const todayIso = isoDate(startOfDayUTC(today));
+      const selectedIso = isoDate(selected);
+      const week = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      let days = "";
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(start.getTime() + i * DAY);
+        const dateIso = isoDate(d);
+        const cls = ["date-calendar-day"];
+        if (d.getUTCMonth() !== month) cls.push("muted");
+        if (dateIso === todayIso) cls.push("today");
+        if (dateIso === selectedIso) cls.push("selected");
+        days += `<button class="${cls.join(" ")}" type="button" data-calendar-date="${dateIso}">${d.getUTCDate()}</button>`;
+      }
+      pop.innerHTML = `
+        <div class="date-calendar-head">
+          <button class="date-calendar-nav" type="button" data-calendar-nav="-1" aria-label="Previous month">‹</button>
+          <div class="date-calendar-title">${escapeHtml(title)}</div>
+          <button class="date-calendar-nav" type="button" data-calendar-nav="1" aria-label="Next month">›</button>
+        </div>
+        <div class="date-calendar-weekdays">${week.map(d => `<span>${d}</span>`).join("")}</div>
+        <div class="date-calendar-grid">${days}</div>`;
+    }
+
 
     function setMode(mode) {
       activeMode = mode;
       document.querySelectorAll(".mode-tab").forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
+      document.querySelectorAll("[data-mobile-mode]").forEach(b => b.classList.toggle("active", b.dataset.mobileMode === mode));
+      const mobileLabel = $("mobileModeLabel");
+      if (mobileLabel) mobileLabel.textContent = mode === "mstr" ? "MSTR" : mode === "portfolio" ? "Portfolio" : "BTC";
       tooltip.style.display = "none";
       if (mode === "portfolio" && state.viewEndMs < today.getTime()) setWindow("25", false);
       autoY();
@@ -8754,6 +9056,7 @@
         bottom: settingNumber(controls.bottomMultiplier.value),
         yearsAhead: settingNumber(controls.yearsAhead.value),
         linearScale: controls.priceScale.value === "linear",
+        chartLabelFormat: controls.chartLabelFormat?.value || "smart3",
         showBase: controls.showBase.checked,
         showFair: controls.showFair.checked && Math.abs(fair - 1) > 1e-9,
         showBottom: controls.showBottom.checked,
@@ -9248,7 +9551,7 @@
         const y = yToPx(v);
         if (y < plot.y || y > plot.y + plot.h) return;
         line(plot.x, y, plot.x + plot.w, y);
-        const label = formatMoney(v, true);
+        const label = formatChartLabelMoney(v);
         ctx.fillText(label, Math.max(8, plot.x - ctx.measureText(label).width - 10), y + 4);
       });
 
@@ -9457,7 +9760,7 @@
         ctx.stroke();
         const labelAllowed = s.cycleLabelMode === "all" || (s.cycleLabelMode === "key" && p.t >= today.getTime() && p.type !== "RECOVER");
         if (labelAllowed && s.cycleLabelMode !== "none") {
-          const label = formatMoney(chartPrice(p.price, p.t), true);
+          const label = formatChartLabelMoney(chartPrice(p.price, p.t));
           queueDeferredLabel(x, y + (isAth ? -11 : 20), label, { color: "rgba(255,255,255,.9)", align: "center" });
         }
       });
@@ -9628,7 +9931,7 @@
         ctx.strokeStyle = isHighlighted ? "rgba(255,255,255,.98)" : "rgba(5,7,13,.82)";
         ctx.stroke();
         if (p.t >= today.getTime() && p.type !== "RECOVER") {
-          const label = formatMoney(chartPrice(p.mstrPrice, p.t), true);
+          const label = formatChartLabelMoney(chartPrice(p.mstrPrice, p.t));
           queueDeferredLabel(x + 8, y + (isAth ? -10 : 18), label, { color: "rgba(255,255,255,.90)", align: "left" });
         }
       });
@@ -9708,6 +10011,7 @@
     function advanceCadenceMs(ms, cadence) {
       if (cadence === "daily") return ms + DAY;
       if (cadence === "weekly") return ms + 7 * DAY;
+      if (cadence === "biweekly") return ms + 14 * DAY;
       if (cadence === "monthly") {
         const d = new Date(ms);
         const y = d.getUTCFullYear();
@@ -9866,7 +10170,7 @@
         ctx.stroke();
         const labelAllowed = s.cycleLabelMode === "all" || (s.cycleLabelMode === "key" && p.t >= today.getTime() && p.type !== "RECOVER");
         if (labelAllowed && s.cycleLabelMode !== "none") {
-          const label = formatMoney(chartPrice(row.totalValue, p.t), true);
+          const label = formatChartLabelMoney(chartPrice(row.totalValue, p.t));
           queueDeferredLabel(x, y + (isAth ? -11 : 20), label, { color: "rgba(255,255,255,.9)", align: "center" });
         }
       });
@@ -9912,7 +10216,7 @@
         const left = x - tw / 2;
         const right = x + tw / 2;
         if (left > lastRight + minGap && right < plot.x + plot.w + 2) {
-          ctx.fillText(label, Math.max(plot.x + 2, left), plot.y + plot.h + 22);
+          ctx.fillText(label, Math.max(plot.x + 2, left), plot.y + plot.h + 16);
           lastRight = right;
         }
       });
@@ -10761,14 +11065,37 @@
 
     function jumpToDate(date) {
       if (!date) return;
-      const center = date.getTime();
+      const center = startOfDayUTC(date).getTime();
       const span = Math.min(state.endMs - state.startMs, 365.25 * 6 * DAY);
       state.viewStartMs = Math.max(state.startMs, center - span * .45);
       state.viewEndMs = Math.min(state.endMs, state.viewStartMs + span);
       if (state.viewEndMs - state.viewStartMs < span) state.viewStartMs = Math.max(state.startMs, state.viewEndMs - span);
       autoY();
+      setHoverAtDate(center, true);
       updateMetrics();
       draw();
+    }
+
+    function setHoverAtDate(t, pin = true) {
+      const x = xToPx(t);
+      let chartValue = NaN;
+      if (activeMode === "mstr") {
+        chartValue = strategyProjectionChartValueAt(t);
+        if (!Number.isFinite(chartValue)) {
+          const row = interpolatedStrategyAt(t);
+          chartValue = row ? chartPrice(row.mstrPrice, t) : NaN;
+        }
+      } else if (activeMode === "portfolio") {
+        const p = interpolatedPortfolioAt(t);
+        chartValue = p ? chartPrice(p.totalValue, t) : NaN;
+      } else {
+        chartValue = cycleProjectionChartValueAt(t);
+        if (!Number.isFinite(chartValue)) chartValue = chartPrice(btcMarketPriceAt(t), t);
+      }
+      if (!Number.isFinite(chartValue) || chartValue <= 0) chartValue = state.yMin * 1.2;
+      hover = { x, y: yToPx(chartValue) };
+      pinnedHover = !!pin;
+      pinnedHoverData = pin ? { t, yValue: chartValue } : null;
     }
 
     function setWindow(w, redraw = true) {
@@ -11285,6 +11612,7 @@
         bottom: controls.bottomMultiplier.value,
         yearsAhead: controls.yearsAhead.value,
         priceScale: controls.priceScale.value,
+        chartLabelFormat: controls.chartLabelFormat?.value || "smart3",
         showBase: controls.showBase.checked,
         showFair: controls.showFair.checked,
         showBottom: controls.showBottom.checked,
@@ -11328,6 +11656,7 @@
         if (data.bottom) controls.bottomMultiplier.value = data.bottom;
         if (data.yearsAhead) controls.yearsAhead.value = data.yearsAhead;
         if (data.priceScale) controls.priceScale.value = data.priceScale;
+        if (data.chartLabelFormat && controls.chartLabelFormat) controls.chartLabelFormat.value = data.chartLabelFormat;
         ["showBase","showFair","showBottom","showHalvings","showCsv","showAthAtl"].forEach(k => {
           if (typeof data[k] === "boolean") controls[k].checked = data[k];
         });
@@ -11481,6 +11810,22 @@
         return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 0 }).format(v);
       }
       return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }).format(v);
+    }
+
+    function formatChartLabelMoney(v) {
+      if (!Number.isFinite(v)) return "-";
+      const mode = controls.chartLabelFormat?.value || "smart3";
+      if (mode === "full") return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: v < 100 ? 2 : 0 }).format(v);
+      if (mode === "compact0" || mode === "compact1" || mode === "compact2") {
+        const digits = mode === "compact0" ? 0 : mode === "compact1" ? 1 : 2;
+        return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: digits }).format(v);
+      }
+      const abs = Math.abs(v);
+      if (abs < 1000) return formatMoney(v);
+      const unit = abs >= 1e12 ? 1e12 : abs >= 1e9 ? 1e9 : abs >= 1e6 ? 1e6 : 1e3;
+      const scaled = abs / unit;
+      const digits = scaled < 100 ? 1 : 0;
+      return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: digits }).format(v);
     }
 
     function formatPopupMoney(v) {
