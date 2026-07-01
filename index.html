@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Bitcoin Power Law MSTR Dashboard v35</title>
+  <title>Bitcoin Power Law MSTR Dashboard v36</title>
   <!-- Bitcoin Power Law icons / PWA metadata -->
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
@@ -1175,7 +1175,7 @@
       top: var(--floating-menu-top, auto);
       z-index: 10070;
       display: none;
-      width: 260px;
+      width: min(292px, calc(100vw - 16px));
       padding: 10px;
       border: 1px solid rgba(255,255,255,.16);
       border-radius: 14px;
@@ -1186,6 +1186,7 @@
       user-select: none;
     }
     .date-calendar-popover.open { display: block; }
+    .date-calendar-popover.force-open { display: block !important; visibility: visible !important; pointer-events: auto !important; }
     .date-calendar-head {
       display: grid;
       grid-template-columns: 34px 1fr 34px;
@@ -2142,7 +2143,7 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV35";
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV36";
     const PRELOADED_CSV = String.raw`2026-06-25,59721.68
 2026-06-24,60995.13
 2026-06-23,62668.02
@@ -8355,6 +8356,9 @@
     let deferredChartLabels = [];
     const activePointers = new Map();
     let pinchGesture = null;
+    let calendarViewDate = null;
+    let calendarSelectedDate = null;
+    let calendarSuppressCloseUntil = 0;
 
     const defaultPopupBandDotSettings = { enabled: true, size: 1.5, glowSize: 2.5, glowAlpha: 0.15 };
     let popupBandDotSettings = { ...defaultPopupBandDotSettings };
@@ -8387,7 +8391,7 @@
     recompute();
     applyDefaultView();
 
-    window.addEventListener("resize", () => { updateResponsiveMode(); resize(); autoY(); ensureMobileHover(true); draw(); });
+    window.addEventListener("resize", () => { updateResponsiveMode(); resize(); autoY(); ensureMobileHover(true); if ($("dateCalendar")?.classList.contains("open")) positionDateCalendar(); draw(); });
 
     Object.entries(controls).forEach(([key, el]) => {
       if (!el || key === "csvInput" || key === "mstrCsvInput") return;
@@ -8452,37 +8456,51 @@
       const menu = $("dateMenu");
       const willOpen = !menu?.classList.contains("open");
       $("popupModeMenu")?.classList.remove("open");
-      closeDateCalendar();
+      closeDateCalendar(true);
       if (willOpen) openDateMenu(false);
       else closeDateMenu();
     });
     $("dateMenuToday").addEventListener("click", () => {
       closeDateMenu();
-      closeDateCalendar();
+      closeDateCalendar(true);
       jumpToToday();
     });
-    $("dateMenuSelect")?.addEventListener("click", e => {
+    function handleSelectDateOpen(e) {
+      e.preventDefault();
       e.stopPropagation();
-      const baseDate = new Date(pxToX(hover?.x ?? xToPx(today.getTime())));
+      const pinnedT = pinnedHoverData?.t;
+      const hoverT = hover ? pxToX(hover.x) : NaN;
+      const baseT = Number.isFinite(pinnedT) ? pinnedT : Number.isFinite(hoverT) ? hoverT : today.getTime();
+      const baseDate = new Date(baseT);
       closeDateMenu();
       openDateCalendar(baseDate);
-    });
-    $("dateCalendar")?.addEventListener("click", e => {
+    }
+    $("dateMenuSelect")?.addEventListener("pointerdown", handleSelectDateOpen, { passive: false });
+    $("dateMenuSelect")?.addEventListener("click", handleSelectDateOpen);
+    document.addEventListener("pointerdown", e => {
+      if (e.target.closest("#dateMenuSelect")) handleSelectDateOpen(e);
+    }, { passive: false });
+    function handleDateCalendarAction(e) {
       e.stopPropagation();
       const nav = e.target.closest("[data-calendar-nav]");
       if (nav) {
+        e.preventDefault();
         const step = Number(nav.dataset.calendarNav) || 0;
         calendarViewDate = new Date(Date.UTC(calendarViewDate.getUTCFullYear(), calendarViewDate.getUTCMonth() + step, 1));
-        renderDateCalendar(calendarViewDate);
+        renderDateCalendar(calendarSelectedDate || calendarViewDate);
+        positionDateCalendar();
         return;
       }
       const day = e.target.closest("[data-calendar-date]");
       if (day) {
+        e.preventDefault();
         const parsed = parseDate(day.dataset.calendarDate);
         if (parsed) jumpToDate(parsed);
-        closeDateCalendar();
+        closeDateCalendar(true);
       }
-    });
+    }
+    $("dateCalendar")?.addEventListener("pointerdown", handleDateCalendarAction, { passive: false });
+    $("dateCalendar")?.addEventListener("click", handleDateCalendarAction);
     $("jumpDateInput").addEventListener("change", () => jumpToDate(parseDate($("jumpDateInput").value)));
     $("toggleInflation")?.addEventListener("click", () => { controls.inflationAdjusted.checked = !controls.inflationAdjusted.checked; recompute(); });
     $("toggleTooltipAnchor")?.addEventListener("click", togglePopupModeMenu);
@@ -8715,27 +8733,61 @@
       if (!menu) return;
       menu.classList.remove("open", "selecting-date");
     }
-    function openDateCalendar(baseDate) {
+    function positionDateCalendar() {
       const pop = $("dateCalendar");
       const btn = $("dateMenuButton");
       if (!pop || !btn) return;
-      const base = baseDate && Number.isFinite(baseDate.getTime()) ? startOfDayUTC(baseDate) : startOfDayUTC(today);
-      calendarViewDate = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1));
-      renderDateCalendar(base);
-      pop.classList.add("open");
-      positionFloatingMenu(pop, btn);
+      const btnRect = btn.getBoundingClientRect();
+      const margin = 8;
+      const w = Math.min(292, window.innerWidth - margin * 2);
+      pop.style.setProperty("width", `${w}px`, "important");
+      // Keep the picker aligned to the calendar button, but clamp it inside the viewport.
+      let left = btnRect.left + btnRect.width / 2 - w / 2;
+      if (btnRect.left < window.innerWidth * 0.35) left = btnRect.left;
+      if (btnRect.right > window.innerWidth * 0.65) left = btnRect.right - w;
+      left = Math.max(margin, Math.min(window.innerWidth - w - margin, left));
+      const h = Math.min(pop.offsetHeight || 334, window.innerHeight - margin * 2);
+      let top = btnRect.bottom + 8;
+      if (top + h > window.innerHeight - margin) top = Math.max(margin, btnRect.top - h - 8);
+      const leftPx = `${Math.round(left)}px`;
+      const topPx = `${Math.round(top)}px`;
+      pop.style.setProperty("--floating-menu-left", leftPx);
+      pop.style.setProperty("--floating-menu-top", topPx);
+      pop.style.setProperty("left", leftPx, "important");
+      pop.style.setProperty("top", topPx, "important");
+      pop.style.setProperty("right", "auto", "important");
+      pop.style.setProperty("bottom", "auto", "important");
+      pop.style.setProperty("z-index", "2147483000", "important");
     }
 
-    function closeDateCalendar() {
+    function openDateCalendar(baseDate) {
       const pop = $("dateCalendar");
       if (!pop) return;
-      pop.classList.remove("open");
+      if (pop.parentElement !== document.body) document.body.appendChild(pop);
+      const base = baseDate && Number.isFinite(baseDate.getTime()) ? startOfDayUTC(baseDate) : startOfDayUTC(today);
+      calendarSelectedDate = base;
+      calendarViewDate = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1));
+      renderDateCalendar(base);
+      calendarSuppressCloseUntil = Date.now() + 450;
+      pop.classList.add("open", "force-open");
+      pop.style.display = "block";
+      requestAnimationFrame(positionDateCalendar);
+      positionDateCalendar();
+    }
+
+    function closeDateCalendar(force = false) {
+      if (!force && Date.now() < calendarSuppressCloseUntil) return;
+      const pop = $("dateCalendar");
+      if (!pop) return;
+      pop.classList.remove("open", "force-open");
+      pop.style.display = "none";
     }
 
     function renderDateCalendar(selectedDate) {
       const pop = $("dateCalendar");
       if (!pop) return;
       const selected = selectedDate && Number.isFinite(selectedDate.getTime()) ? startOfDayUTC(selectedDate) : startOfDayUTC(today);
+      calendarSelectedDate = selected;
       if (!calendarViewDate) calendarViewDate = new Date(Date.UTC(selected.getUTCFullYear(), selected.getUTCMonth(), 1));
       const year = calendarViewDate.getUTCFullYear();
       const month = calendarViewDate.getUTCMonth();
@@ -11641,7 +11693,7 @@
         strategy: getStrategySettings(),
         portfolio: getPortfolioSettings()
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch {}
     }
 
     function loadSettings() {
@@ -11748,7 +11800,8 @@
 
     function exportJson() {
       saveSettings();
-      downloadText(localStorage.getItem(STORAGE_KEY) || "{}", "power-law-settings.json", "application/json");
+      let saved = "{}"; try { saved = localStorage.getItem(STORAGE_KEY) || "{}"; } catch {}
+      downloadText(saved, "power-law-settings.json", "application/json");
     }
 
     function exportHtml() {
