@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bitcoin Power Law MSTR Dashboard v29</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>Bitcoin Power Law MSTR Dashboard v32</title>
   <style>
     :root {
       --bg: #070a12;
@@ -24,9 +24,22 @@
       color-scheme: dark;
     }
     * { box-sizing: border-box; }
+    html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      -webkit-text-size-adjust: 100%;
+    }
     body {
       margin: 0;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
       min-height: 100vh;
+      min-height: 100dvh;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
@@ -34,13 +47,19 @@
         radial-gradient(circle at 88% 12%, rgba(247,147,26,.16), transparent 34%),
         linear-gradient(135deg, #05070d 0%, #0c1220 48%, #070911 100%);
       overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
     }
     button, input, select, textarea { font: inherit; }
+    button, input, select, textarea, .popup-window-body, aside { touch-action: pan-y; }
     button { color: inherit; }
     .app {
       height: 100vh;
+      height: 100dvh;
       width: 100vw;
       overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
       padding: 8px;
       position: relative;
     }
@@ -326,6 +345,8 @@
       width: var(--drawer-width);
       min-height: 0;
       overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: var(--radius);
@@ -347,7 +368,7 @@
       background: #0d1320;
       border-bottom: 1px solid rgba(255,255,255,.10);
     }
-    .popup-window-body { padding: 12px 14px 16px; font-size: 13px; }
+    .popup-window-body { padding: 12px 14px 16px; font-size: 13px; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
     .popup-window-body .date { font-weight: 850; margin-bottom: 8px; text-align: right; color: #f3f7ff; }
     .popup-window-body .row { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; color: var(--muted); }
     .popup-window-body .row strong { color: inherit; font-weight: 750; white-space: nowrap; }
@@ -1048,6 +1069,356 @@
       }
     }
 
+
+
+    .date-menu-wrap { position: relative; display: inline-grid; }
+    .date-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 9999;
+      display: none;
+      min-width: 148px;
+      padding: 6px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 12px;
+      background: rgba(13,18,31,.98);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .date-menu.open { display: grid; gap: 5px; }
+    .date-menu-option, .popup-mode-option {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      padding: 8px 10px;
+      color: #e7efff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .date-menu-option:hover, .popup-mode-option:hover, .popup-mode-option.active {
+      background: rgba(122,167,255,.18);
+    }
+    .icon-btn svg { overflow: visible; }
+
+    @media (max-width: 1100px) {
+      :root { --compact-data-height: clamp(190px, 38dvh, 300px); }
+      body { overflow: hidden !important; }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) {
+        display: grid !important;
+        grid-template-rows: minmax(0, 1fr) var(--compact-data-height) !important;
+        gap: 6px !important;
+        height: 100dvh !important;
+        width: 100vw !important;
+        padding: 5px 5px max(5px, env(safe-area-inset-bottom)) !important;
+        overflow: hidden !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) main {
+        grid-row: 1 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        display: grid !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        gap: 6px !important;
+        margin: 0 !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .chart-card {
+        grid-row: 2 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) #popupWindow {
+        position: relative !important;
+        grid-row: 2 !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        transform: none !important;
+        border-radius: 16px !important;
+        overflow: hidden !important;
+        z-index: 20 !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) #popupWindow .popup-window-head {
+        display: none !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) #popupWindow .popup-window-body {
+        height: 100% !important;
+        max-height: none !important;
+        overflow: auto !important;
+        padding: 10px 12px 12px !important;
+        font-size: 12px !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .tooltip,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .metric-toggle,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .status-bar {
+        display: none !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .brand {
+        display: none !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .header {
+        grid-row: 1 !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 6px !important;
+        padding: 6px !important;
+        overflow: visible !important;
+        z-index: 120 !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .brand-wrap {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        min-width: 0 !important;
+        order: 2 !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .mode-tabs {
+        max-width: 100% !important;
+        flex: 0 1 auto !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .actions {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 5px !important;
+        overflow: visible !important;
+        order: 1 !important;
+        padding: 0 !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .popup-mode-wrap {
+        display: none !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .icon-btn {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 10px !important;
+        flex: 0 0 auto !important;
+      }
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .icon-btn svg {
+        width: 20px !important;
+        height: 20px !important;
+      }
+      .date-menu {
+        position: fixed !important;
+        right: 8px !important;
+        top: 48px !important;
+        z-index: 9999 !important;
+      }
+      #settingsPanel,
+      #infoPanel {
+        top: 5px !important;
+        right: 5px !important;
+        bottom: max(5px, env(safe-area-inset-bottom)) !important;
+        width: calc(100vw - 10px) !important;
+        max-width: none !important;
+        z-index: 200 !important;
+      }
+    }
+
+
+    /* v31 compact/menu polish */
+    .date-menu,
+    .popup-mode-menu {
+      position: fixed !important;
+      left: var(--floating-menu-left, auto) !important;
+      top: var(--floating-menu-top, auto) !important;
+      right: auto !important;
+      z-index: 10050 !important;
+    }
+    .date-menu-date {
+      display: none;
+      width: 100%;
+      min-width: 156px;
+      margin-top: 3px;
+      padding: 8px 9px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(6,9,16,.95);
+      color: #e7efff;
+      color-scheme: dark;
+      font-size: 12px;
+      font-weight: 750;
+    }
+    .date-menu.selecting-date .date-menu-date { display: block; }
+
+    @media (max-width: 1100px) {
+      :root { --compact-data-height: clamp(190px, 34dvh, 280px); }
+      body { overflow: hidden !important; }
+      .app.mobile-popup-mode {
+        display: grid !important;
+        grid-template-rows: minmax(0, 1fr) var(--compact-data-height) !important;
+        gap: 6px !important;
+        height: 100dvh !important;
+        width: 100vw !important;
+        padding: 5px 5px max(5px, env(safe-area-inset-bottom)) !important;
+        overflow: hidden !important;
+      }
+      .app.mobile-popup-mode main,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) main,
+      .app.mobile-popup-mode.settings-open main,
+      .app.mobile-popup-mode.info-open main {
+        grid-row: 1 !important;
+        display: grid !important;
+        grid-template-rows: auto minmax(0, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+      }
+      .app.mobile-popup-mode .header,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .header,
+      .app.mobile-popup-mode.settings-open .header,
+      .app.mobile-popup-mode.info-open .header {
+        grid-row: 1 !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto !important;
+        gap: 6px !important;
+        padding: 6px !important;
+        overflow: visible !important;
+        z-index: 120 !important;
+      }
+      .app.mobile-popup-mode .brand,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .brand,
+      .app.mobile-popup-mode.settings-open .brand,
+      .app.mobile-popup-mode.info-open .brand {
+        display: none !important;
+      }
+      .app.mobile-popup-mode .brand-wrap,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .brand-wrap,
+      .app.mobile-popup-mode.settings-open .brand-wrap,
+      .app.mobile-popup-mode.info-open .brand-wrap {
+        order: 2 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 0 !important;
+      }
+      .app.mobile-popup-mode .mode-tabs,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .mode-tabs,
+      .app.mobile-popup-mode.settings-open .mode-tabs,
+      .app.mobile-popup-mode.info-open .mode-tabs {
+        max-width: 100% !important;
+        flex: 0 1 auto !important;
+      }
+      .app.mobile-popup-mode .actions,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .actions,
+      .app.mobile-popup-mode.settings-open .actions,
+      .app.mobile-popup-mode.info-open .actions {
+        order: 1 !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 5px !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+      .app.mobile-popup-mode .popup-mode-wrap,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .popup-mode-wrap,
+      .app.mobile-popup-mode.settings-open .popup-mode-wrap,
+      .app.mobile-popup-mode.info-open .popup-mode-wrap {
+        display: none !important;
+      }
+      .app.mobile-popup-mode .icon-btn,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .icon-btn,
+      .app.mobile-popup-mode.settings-open .icon-btn,
+      .app.mobile-popup-mode.info-open .icon-btn {
+        width: 34px !important;
+        height: 34px !important;
+        border-radius: 10px !important;
+        flex: 0 0 auto !important;
+      }
+      .app.mobile-popup-mode .icon-btn svg,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .icon-btn svg,
+      .app.mobile-popup-mode.settings-open .icon-btn svg,
+      .app.mobile-popup-mode.info-open .icon-btn svg {
+        width: 20px !important;
+        height: 20px !important;
+      }
+      .app.mobile-popup-mode .chart-card,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) .chart-card,
+      .app.mobile-popup-mode.settings-open .chart-card,
+      .app.mobile-popup-mode.info-open .chart-card {
+        grid-row: 2 !important;
+        width: 100% !important;
+        height: 100% !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+      }
+      .app.mobile-popup-mode canvas { width: 100% !important; height: 100% !important; }
+      .app.mobile-popup-mode .tooltip { display: none !important; }
+      .app.mobile-popup-mode #popupWindow,
+      .app.mobile-popup-mode.popup-window-open:not(.settings-open):not(.info-open) #popupWindow,
+      .app.mobile-popup-mode.settings-open #popupWindow,
+      .app.mobile-popup-mode.info-open #popupWindow {
+        position: relative !important;
+        grid-row: 2 !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        transform: none !important;
+        border-radius: 16px !important;
+        overflow: hidden !important;
+        z-index: 20 !important;
+      }
+      .app.mobile-popup-mode #popupWindow .popup-window-head { display: none !important; }
+      .app.mobile-popup-mode #popupWindow .popup-window-body {
+        height: 100% !important;
+        max-height: none !important;
+        overflow: auto !important;
+        padding: 10px 12px 12px !important;
+        font-size: 12px !important;
+      }
+      .app.mobile-popup-mode .metric-toggle,
+      .app.mobile-popup-mode .status-bar {
+        display: none !important;
+      }
+      .app.mobile-popup-mode #settingsPanel,
+      .app.mobile-popup-mode #infoPanel {
+        position: fixed !important;
+        top: max(5px, env(safe-area-inset-top)) !important;
+        right: 5px !important;
+        bottom: max(5px, env(safe-area-inset-bottom)) !important;
+        width: calc(100vw - 10px) !important;
+        max-width: none !important;
+        z-index: 10000 !important;
+      }
+      .app.mobile-popup-mode .backdrop.open { z-index: 9990 !important; }
+      .app.mobile-popup-mode .date-menu,
+      .app.mobile-popup-mode .popup-mode-menu {
+        z-index: 10050 !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1074,14 +1445,18 @@
           <button class="btn icon-btn" id="zoomOut" title="Reset view" aria-label="Reset view">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/><path d="M7.5 10.5h6"/></svg>
           </button>
-          <button class="btn icon-btn" id="jumpToday" title="Jump to today" aria-label="Jump to today">
-            <span class="calendar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9h18"/></svg><span class="calendar-day" id="calendarDay">18</span></span>
-          </button>
-          <button class="btn icon-btn" id="jumpDateBtn" title="Jump to selected date" aria-label="Jump to selected date">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9h18"/><path d="M12 12v5M9.5 14.5h5"/></svg>
-          </button>
+          <div class="date-menu-wrap">
+            <button class="btn icon-btn" id="dateMenuButton" title="Date menu" aria-label="Date menu">
+              <span class="calendar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3 9h18"/></svg><span class="calendar-day" id="calendarDay">18</span></span>
+            </button>
+            <div class="date-menu" id="dateMenu" role="menu" aria-label="Date menu">
+              <button class="date-menu-option" id="dateMenuToday" type="button">Today</button>
+              <button class="date-menu-option" id="dateMenuSelect" type="button">Select Date</button>
+              <input id="dateMenuInput" class="date-menu-date" type="date" aria-label="Select chart date">
+            </div>
+          </div>
           <button class="btn icon-btn" id="toggleInflation" title="Inflation-adjust chart" aria-label="Inflation-adjust chart">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18V7"/><path d="M4 18h16"/><path d="M7 15l4-4 3 3 5-7"/><path d="M16 7h3v3"/><path d="M9.5 6.8c.5-.6 1.4-1 2.5-1 1.5 0 2.6.7 2.6 1.8 0 1.2-1.1 1.7-2.8 2.1-1.8.4-2.8.9-2.8 2.1 0 1.2 1.1 2 2.9 2 1.1 0 2-.3 2.7-1"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 18.5h15"/><path d="M5 18.5V6"/><path d="M7.5 15.5l4-5 3.2 3.2 4.8-6.2"/><path d="M16.4 7.5h3.1v3.1"/></svg>
           </button>
           <div class="popup-mode-wrap">
             <button class="btn icon-btn" id="toggleTooltipAnchor" title="Popup mode" aria-label="Popup mode">
@@ -1094,7 +1469,7 @@
             </div>
           </div>
           <button class="btn icon-btn" id="openInfo" title="Chart info" aria-label="Chart info">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M9.75 9a2.35 2.35 0 0 1 4.55.8c0 1.9-2.3 2.05-2.3 4"/><path d="M12 17.4h.01"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 11v5"/><path d="M12 7.8h.01"/></svg>
           </button>
           <input id="jumpDateInput" class="hidden" type="date">
         </div>
@@ -1537,7 +1912,7 @@
     const today = startOfDayUTC(new Date());
     const PRICE_MIN = 1;
     const PRICE_MAX = 10000000000;
-    const STORAGE_KEY = "btcPowerLawMstrDashboardV29";
+    const STORAGE_KEY = "btcPowerLawMstrDashboardV32";
     const PRELOADED_CSV = String.raw`2026-06-25,59721.68
 2026-06-24,60995.13
 2026-06-23,62668.02
@@ -7768,6 +8143,7 @@
     updateCycleProjectionSettingsVisibility();
     formatCommaInputs();
     updateResponsiveMode();
+    installAppTouchGuards();
     initializeHistoricalData();
     renderBandsEditor();
     renderMstrBandsEditor();
@@ -7822,8 +8198,33 @@
     $("backdrop").addEventListener("click", closeDrawers);
     $("zoomOut").addEventListener("click", applyDefaultView);
     $("resetView").addEventListener("click", applyDefaultView);
-    $("jumpToday").addEventListener("click", jumpToToday);
-    $("jumpDateBtn").addEventListener("click", () => $("jumpDateInput").showPicker ? $("jumpDateInput").showPicker() : $("jumpDateInput").click());
+    $("dateMenuButton").addEventListener("click", e => {
+      e.stopPropagation();
+      const menu = $("dateMenu");
+      const willOpen = !menu?.classList.contains("open");
+      $("popupModeMenu")?.classList.remove("open");
+      if (willOpen) openDateMenu(false);
+      else closeDateMenu();
+    });
+    $("dateMenuToday").addEventListener("click", () => {
+      closeDateMenu();
+      jumpToToday();
+    });
+    $("dateMenuSelect").addEventListener("click", e => {
+      e.stopPropagation();
+      const input = $("dateMenuInput") || $("jumpDateInput");
+      if (input) input.value = isoDate(new Date(pxToX(hover?.x ?? xToPx(today.getTime()))));
+      openDateMenu(true);
+      setTimeout(() => {
+        try { if (input?.showPicker) input.showPicker(); else input?.focus(); }
+        catch { input?.focus(); }
+      }, 0);
+    });
+    $("dateMenuInput")?.addEventListener("change", () => {
+      const parsed = parseDate($("dateMenuInput").value);
+      if (parsed) jumpToDate(parsed);
+      closeDateMenu();
+    });
     $("jumpDateInput").addEventListener("change", () => jumpToDate(parseDate($("jumpDateInput").value)));
     $("toggleInflation")?.addEventListener("click", () => { controls.inflationAdjusted.checked = !controls.inflationAdjusted.checked; recompute(); });
     $("toggleTooltipAnchor")?.addEventListener("click", togglePopupModeMenu);
@@ -7877,6 +8278,7 @@
     document.addEventListener("click", e => {
       if (!e.target.closest(".help")) hideHelp();
       if (!e.target.closest(".popup-mode-wrap")) $("popupModeMenu")?.classList.remove("open");
+      if (!e.target.closest(".date-menu-wrap")) closeDateMenu();
     });
     injectSettingHelp();
     bindHelpButtons(document);
@@ -8012,6 +8414,48 @@
       document.querySelectorAll(`[data-settings-subcontent^="${group}-"]`).forEach(panel => panel.classList.toggle("active", panel.dataset.settingsSubcontent === tab));
     }
 
+    function getMenuPlacement(button, menu) {
+      const btnRect = button.getBoundingClientRect();
+      const menuWidth = Math.max(menu.offsetWidth || 0, parseFloat(getComputedStyle(menu).minWidth) || 150);
+      const margin = 8;
+      const center = btnRect.left + btnRect.width / 2;
+      const vw = window.innerWidth;
+      let left;
+      if (center < vw * 0.38) left = btnRect.left;
+      else if (center > vw * 0.62) left = btnRect.right - menuWidth;
+      else left = center - menuWidth / 2;
+      left = Math.max(margin, Math.min(vw - menuWidth - margin, left));
+      const top = Math.max(margin, btnRect.bottom + 8);
+      return { left, top };
+    }
+
+    function positionFloatingMenu(menu, button) {
+      if (!menu || !button) return;
+      const wasOpen = menu.classList.contains("open");
+      if (!wasOpen) menu.classList.add("open");
+      menu.style.visibility = "hidden";
+      const { left, top } = getMenuPlacement(button, menu);
+      menu.style.setProperty("--floating-menu-left", `${Math.round(left)}px`);
+      menu.style.setProperty("--floating-menu-top", `${Math.round(top)}px`);
+      menu.style.visibility = "";
+      if (!wasOpen) menu.classList.remove("open");
+    }
+
+    function openDateMenu(selecting = false) {
+      const menu = $("dateMenu");
+      const btn = $("dateMenuButton");
+      if (!menu || !btn) return;
+      menu.classList.add("open");
+      menu.classList.toggle("selecting-date", !!selecting);
+      positionFloatingMenu(menu, btn);
+    }
+
+    function closeDateMenu() {
+      const menu = $("dateMenu");
+      if (!menu) return;
+      menu.classList.remove("open", "selecting-date");
+    }
+
     function setMode(mode) {
       activeMode = mode;
       document.querySelectorAll(".mode-tab").forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
@@ -8034,7 +8478,12 @@
     function togglePopupModeMenu(e) {
       e?.stopPropagation?.();
       const menu = $("popupModeMenu");
-      if (menu) menu.classList.toggle("open");
+      const btn = $("toggleTooltipAnchor");
+      if (!menu || !btn) return;
+      const willOpen = !menu.classList.contains("open");
+      closeDateMenu();
+      menu.classList.toggle("open", willOpen);
+      if (willOpen) positionFloatingMenu(menu, btn);
     }
 
     function setPopupMode(mode = "window", redraw = true) {
@@ -8069,6 +8518,48 @@
       } else {
         app.classList.toggle("popup-window-open", popupMode === "window" && !app.classList.contains("settings-open") && !app.classList.contains("info-open"));
       }
+    }
+
+    function installAppTouchGuards() {
+      if (installAppTouchGuards.installed) return;
+      installAppTouchGuards.installed = true;
+      let lastTouchEnd = 0;
+
+      const isChartTarget = target => !!target?.closest?.("#chart");
+      const isScrollableTarget = target => {
+        let el = target;
+        while (el && el !== document.body && el !== document.documentElement) {
+          if (el === canvas) return false;
+          const style = window.getComputedStyle(el);
+          const canScrollY = /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 2;
+          if (canScrollY) return true;
+          el = el.parentElement;
+        }
+        return false;
+      };
+
+      ["gesturestart", "gesturechange", "gestureend"].forEach(type => {
+        document.addEventListener(type, event => event.preventDefault(), { passive: false });
+      });
+
+      document.addEventListener("touchmove", event => {
+        if (event.touches && event.touches.length > 1) {
+          event.preventDefault();
+          return;
+        }
+        if (isChartTarget(event.target)) return;
+        if (!isScrollableTarget(event.target)) event.preventDefault();
+      }, { passive: false });
+
+      document.addEventListener("touchend", event => {
+        const now = Date.now();
+        if (now - lastTouchEnd < 350) event.preventDefault();
+        lastTouchEnd = now;
+      }, { passive: false });
+
+      document.addEventListener("dblclick", event => {
+        if (!isChartTarget(event.target)) event.preventDefault();
+      }, { passive: false });
     }
 
     function queueDeferredLabel(x, y, text, opts = {}) {
@@ -8157,8 +8648,13 @@
         $("infoPanel").classList.add("open");
         app.classList.add("info-open");
       }
-      if (window.matchMedia("(max-width: 980px)").matches) $("backdrop").classList.add("open");
-      setTimeout(() => { resize(); draw(); }, 240);
+      if (isMobilePopupMode()) {
+        $("backdrop").classList.add("open");
+        draw();
+      } else {
+        if (window.matchMedia("(max-width: 980px)").matches) $("backdrop").classList.add("open");
+        setTimeout(() => { resize(); draw(); }, 240);
+      }
     }
 
     function closeDrawers(redraw = true) {
@@ -8167,7 +8663,10 @@
       $("backdrop").classList.remove("open");
       app.classList.remove("settings-open", "info-open");
       updateResponsiveMode();
-      if (redraw) setTimeout(() => { resize(); ensurePopupWindowHover(true); draw(); }, 240);
+      if (redraw) {
+        if (isMobilePopupMode()) { ensurePopupWindowHover(true); draw(); }
+        else setTimeout(() => { resize(); ensurePopupWindowHover(true); draw(); }, 240);
+      }
     }
 
     function setSettingsPanel(name) {
@@ -9319,6 +9818,7 @@
     function drawPortfolioChart() {
       const points = portfolioLinePointsForView();
       if (!points.length) return;
+      if (getSettings().showHalvings) drawHalvings();
       drawTodayLine();
       drawPortfolioValueLine(points, "btcValue", "rgba(125,247,255,.86)", 1.8, [5, 5], 0);
       drawPortfolioValueLine(points, "mstrValue", "rgba(247,147,26,.88)", 1.8, [5, 5], 0);
@@ -9401,7 +9901,7 @@
         const left = x - tw / 2;
         const right = x + tw / 2;
         if (left > lastRight + minGap && right < plot.x + plot.w + 2) {
-          ctx.fillText(label, Math.max(plot.x + 2, left), plot.y + plot.h + 30);
+          ctx.fillText(label, Math.max(plot.x + 2, left), plot.y + plot.h + 22);
           lastRight = right;
         }
       });
